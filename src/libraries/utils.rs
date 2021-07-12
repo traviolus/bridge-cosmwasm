@@ -54,8 +54,6 @@ pub fn encode_time(second: u64, nano_second: u32) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ethabi::ParamType;
-    use hex::encode as HexEncode;
 
     #[test]
     fn merkle_leaf_hash_test() {

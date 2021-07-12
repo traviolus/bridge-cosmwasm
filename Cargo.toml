@@ -39,12 +39,11 @@ snafu = { version = "0.6.3" }
 sha2 = "0.9.5"
 cw-storage-plus = "0.6.2"
 hex = "0.4.3"
-sp-io = "3.0.0"
 sha3 = "0.9.1"
 getrandom = { version = "0.2.3", features = ["js"] }
 bincode = "1.0"
 prost = "0.7"
-ethabi = "14.1.0"
+num = "0.4.0"
 
 [dev-dependencies]
 cosmwasm-schema = { version = "0.10.1" }

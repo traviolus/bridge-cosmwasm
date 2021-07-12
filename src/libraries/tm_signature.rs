@@ -2,9 +2,9 @@ use serde::{Deserialize, Serialize};
 use schemars::JsonSchema;
 use sha2::{Sha256, Digest as sha2Digest};
 use sha3::Keccak256;
-use std::convert::TryInto;
-use sp_io::crypto;
 use cosmwasm_std::CanonicalAddr;
+
+use crate::libraries::secp256k1::ecrecover;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Data {
@@ -19,12 +19,8 @@ impl Data {
     pub fn recover_signer(self, block_hash: &Vec<u8>) -> CanonicalAddr {
         let mut hasher = Sha256::new();
         hasher.update([self.signed_data_prefix.as_slice(), block_hash.as_slice(), self.signed_data_suffix.as_slice()].concat());
-        let hash_result = &hasher.finalize()[..];
-        let signature = [self.r.as_slice(), self.s.as_slice(), &[self.v - 27u8]].concat();
-        let addr_result = match crypto::secp256k1_ecdsa_recover(signature.as_slice().try_into().unwrap(), hash_result.try_into().unwrap()) {
-            Ok(pubkey) => Vec::from(pubkey),
-            _ => Vec::new()
-        };
+        let hash_result = Vec::from(&hasher.finalize()[..]);
+        let addr_result = ecrecover(hash_result, self.r, self.s, self.v);
         let mut hasher = Keccak256::new();
         hasher.update(addr_result.as_slice());
         let result = &hasher.finalize()[12..32];
@@ -58,12 +54,5 @@ mod tests {
         let result02 = data02.recover_signer(&block_hash);
         assert_eq!(result01, CanonicalAddr::from(decode("3b759C4d728e50D5cC04c75f596367829d5b5061").unwrap()));
         assert_eq!(result02, CanonicalAddr::from(decode("49897b9D617AD700b84a935616E81f9f4b5305bc").unwrap()));
-    }
-
-    #[test]
-    fn addr_test() {
-        let a = CanonicalAddr::from(decode("652D89a66Eb4eA55366c45b1f9ACfc8e2179E1c5").unwrap());
-        let b = CanonicalAddr::from(decode("652d89a66eb4ea55366c45b1f9acfc8e2179e1c5").unwrap());
-        assert_eq!(a, b);
     }
 }
