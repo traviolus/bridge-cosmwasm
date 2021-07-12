@@ -1,39 +1,54 @@
 use num::{BigInt, ToPrimitive, bigint::Sign::Plus};
-use num::traits::Zero;
-use std::str::FromStr;
 use hex::{decode};
 
 fn modulus(a: &BigInt, b: &BigInt) -> BigInt {
     ((a % b) + b) % b
 }
 
+fn mod_pow(a: &BigInt, b: &BigInt, c: &BigInt) -> BigInt {
+    let mut base = a.clone();
+    let mut exp = b.clone();
+    let modulus = c.clone();
+    if modulus == BigInt::from(1i8) { return BigInt::from(0i8) }
+    let mut result = BigInt::from(1i8);
+    base = &base % &modulus;
+    while &exp > &BigInt::from(0i8) {
+        if &exp % BigInt::from(2i8) == BigInt::from(1i8) {
+            result = &result * &base % &modulus;
+        }
+        exp = &exp >> 1;
+        base = &base * &base % &modulus;
+    }
+    result
+}
+
 fn inv_mod(a: BigInt, n: &BigInt) -> BigInt {
-    return BigInt::modpow(&a, &(n.clone() - BigInt::from(2u8)), n);
+    return mod_pow(&a, &(n.clone() - BigInt::from(2i8)), n);
 }
 
 fn ecc_add(a: &(BigInt, BigInt), b: &(BigInt, BigInt)) -> (BigInt, BigInt) {
-    let _p: BigInt = BigInt::from_str("115792089237316195423570985008687907853269984665640564039457584007908834671663").unwrap();
+    let _p: BigInt = BigInt::from_bytes_be(Plus, decode("fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f").unwrap().as_slice());
     let l = modulus(&((&b.1 - &a.1) * inv_mod(&b.0 - &a.0, &_p)), &_p);
     let x = modulus(&(&l * &l - &a.0 - &b.0), &_p);
     let y = modulus(&(&l * (&a.0 - &x) - &a.1), &_p);
-    return (x, y);
+    (x, y)
 }
 
 fn ecc_double(a: &(BigInt, BigInt)) -> (BigInt, BigInt) {
-    let _p: BigInt = BigInt::from_str("115792089237316195423570985008687907853269984665640564039457584007908834671663").unwrap();
+    let _p: BigInt = BigInt::from_bytes_be(Plus, decode("fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f").unwrap().as_slice());
     let _a: BigInt = BigInt::from(0i8);
     let l = modulus(&((BigInt::from(3i8) * &a.0 * &a.0 + &_a) * inv_mod(BigInt::from(2i8) * &a.1, &_p)), &_p);
     let x = modulus(&(&l * &l - BigInt::from(2i8) * &a.0), &_p);
     let y = modulus(&(&l * (&a.0 - &x) - &a.1), &_p);
-    return (x, y);
+    (x, y)
 }
 
 fn ecc_mul(point: (BigInt, BigInt), scalar: BigInt) -> (BigInt, BigInt) {
-    let _p: BigInt = BigInt::from_str("115792089237316195423570985008687907853269984665640564039457584007908834671663").unwrap();
+    let _p: BigInt = BigInt::from_bytes_be(Plus, decode("fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f").unwrap().as_slice());
     if scalar == BigInt::from(0i8) || scalar >= _p {
         panic!("INVALID_SCALAR_OR_PRIVATEKEY");
     }
-    let scalar_bin = &scalar.to_str_radix(2u32);
+    let scalar_bin = format!("{:b}", &scalar);
     let mut q = point.clone();
     for i in 1usize..scalar_bin.len() {
         q = ecc_double(&q);
@@ -41,7 +56,7 @@ fn ecc_mul(point: (BigInt, BigInt), scalar: BigInt) -> (BigInt, BigInt) {
             q = ecc_add(&q, &point)
         }
     }
-    return q;
+    q
 }
 
 fn to_base(n: BigInt, b: BigInt) -> Vec<BigInt> {
@@ -54,7 +69,7 @@ fn to_base(n: BigInt, b: BigInt) -> Vec<BigInt> {
         ans = [vec![modulus(&temp, &b)], ans].concat();
         temp /= &b;
     }
-    return ans;
+    ans
 }
 
 fn ecc_sqrt(a: BigInt, p: BigInt) -> (BigInt, BigInt) {
@@ -64,16 +79,16 @@ fn ecc_sqrt(a: BigInt, p: BigInt) -> (BigInt, BigInt) {
         return (n.clone(), modulus(&-&n, &p));
     }
     let phi = &p - BigInt::from(1i8);
-    if BigInt::modpow(&n, &(&phi/BigInt::from(2i8)), &p) != BigInt::from(1i8) {
-        return (BigInt::zero(), BigInt::zero());
+    if mod_pow(&n, &(&phi/BigInt::from(2i8)), &p) != BigInt::from(1i8) {
+        return (BigInt::from(0u8), BigInt::from(0u8));
     }
     if modulus(&p, &BigInt::from(4i8)) == BigInt::from(3i8) {
-        let ans = BigInt::modpow(&n, &((&p + BigInt::from(1i8)) / BigInt::from(4i8)), &p);
+        let ans = mod_pow(&n, &((&p + BigInt::from(1i8)) / BigInt::from(4i8)), &p);
         return (ans.clone(), modulus(&-&ans, &p));
     }
-    let mut aa = BigInt::zero();
+    let mut aa = BigInt::from(0u8);
     for i in 1..p.to_i32().unwrap() {
-        let temp = BigInt::modpow(&(modulus(&(&i * &i - &n), &p)), &(&phi / BigInt::from(2i8)), &p);
+        let temp = mod_pow(&(modulus(&(&i * &i - &n), &p)), &(&phi / BigInt::from(2i8)), &p);
         if temp == phi {
             aa = BigInt::from(i);
             break
@@ -90,7 +105,7 @@ fn ecc_sqrt(a: BigInt, p: BigInt) -> (BigInt, BigInt) {
     let mut x1 = (aa.clone(), BigInt::from(1i8));
     let mut x2 = cipolla_mult(&x1, &x1, &aa * &aa - &n, &p);
     for i in 1usize..exponent.len() {
-        if exponent[i] == BigInt::zero() {
+        if exponent[i] == BigInt::from(0u8) {
             x2 = cipolla_mult(&x2, &x1, &aa * &aa - &n, &p);
             x1 = cipolla_mult(&x1, &x1, &aa * &aa - &n, &p);
         } else {
@@ -99,7 +114,7 @@ fn ecc_sqrt(a: BigInt, p: BigInt) -> (BigInt, BigInt) {
         }
     }
 
-    return (x1.clone().0, modulus(&-(&x1.0), &p));
+    (x1.clone().0, modulus(&-(&x1.0), &p))
 }
 
 pub fn ecrecover(_e: Vec<u8>, _r: Vec<u8>, _s: Vec<u8>, v: u8) -> Vec<u8> {
@@ -113,10 +128,10 @@ pub fn ecrecover(_e: Vec<u8>, _r: Vec<u8>, _s: Vec<u8>, v: u8) -> Vec<u8> {
         panic!("size of s must be 32");
     }
 
-    let _p: BigInt = BigInt::from_str("115792089237316195423570985008687907853269984665640564039457584007908834671663").unwrap();
-    let _n: BigInt = BigInt::from_str("115792089237316195423570985008687907852837564279074904382605163141518161494337").unwrap();
-    let _a: BigInt = BigInt::from_str("0").unwrap();
-    let _b: BigInt = BigInt::from_str("7").unwrap();
+    let _p: BigInt = BigInt::from_bytes_be(Plus, decode("fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f").unwrap().as_slice());
+    let _n: BigInt = BigInt::from_bytes_be(Plus, decode("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141").unwrap().as_slice());
+    let _a: BigInt = BigInt::from(0i8);
+    let _b: BigInt = BigInt::from(7i8);
     let _gx: BigInt = BigInt::from_bytes_be(Plus, decode("79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798").unwrap().as_slice());
     let _gy: BigInt = BigInt::from_bytes_be(Plus, decode("483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8").unwrap().as_slice());
     let _g: (BigInt, BigInt) = (_gx, _gy);
@@ -150,6 +165,7 @@ mod tests {
     use super::*;
     use sha2::{Sha256, Digest};
     use sha3::Keccak256;
+    use std::str::FromStr;
 
     #[test]
     fn modulus_test() {
