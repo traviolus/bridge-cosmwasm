@@ -322,7 +322,7 @@ mod tests {
     #[test]
     fn test_verify_oracle_data() {
         let mut deps = mock_dependencies(20, &[]);
-                let validators_set: Vec<ValidatorWithPower> = vec![
+        let validators_set: Vec<ValidatorWithPower> = vec![
             ValidatorWithPower {
                 addr: CanonicalAddr::from(decode("652D89a66Eb4eA55366c45b1f9ACfc8e2179E1c5").unwrap()),
                 power: Uint128::from(100u64),

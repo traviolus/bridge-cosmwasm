@@ -150,7 +150,6 @@ mod tests {
     use super::*;
     use sha2::{Sha256, Digest};
     use sha3::Keccak256;
-    use hex::encode;
 
     #[test]
     fn modulus_test() {
