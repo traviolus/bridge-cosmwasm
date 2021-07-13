@@ -10,25 +10,25 @@ use crate::libraries::result_codec::{Result, ResolveStatus};
 
 #[derive(Debug)]
 pub struct RelayBlockParams {
-    multi_store: multi_store::Data,
-    merkle_paths: block_header_merkle_path::Data,
-    signatures: Vec<tm_signature::Data>
+    pub multi_store: multi_store::Data,
+    pub merkle_paths: block_header_merkle_path::Data,
+    pub signatures: Vec<tm_signature::Data>
 }
 
 #[derive(Debug)]
 pub struct VerifyDataParams {
-    block_height: Uint128,
-    result: Result,
-    version: Uint128,
-    merkle_paths: Vec<iavl_merkle_path::Data>
+    pub block_height: u64,
+    pub result: Result,
+    pub version: Uint128,
+    pub merkle_paths: Vec<iavl_merkle_path::Data>
 }
 
 #[derive(Debug)]
 pub struct VerifyCountParams {
-    block_height: Uint128,
-    count: u64,
-    version: Uint128,
-    merkle_paths: Vec<iavl_merkle_path::Data>
+    pub block_height: u64,
+    pub count: u64,
+    pub version: Uint128,
+    pub merkle_paths: Vec<iavl_merkle_path::Data>
 }
 
 pub enum AbiTypes {
@@ -178,7 +178,7 @@ pub fn eth_decode_relay_data(data: &Token) -> RelayBlockParams {
 pub fn eth_decode_verify_data(data: &Token) -> VerifyDataParams {
     return match eth_decode(AbiTypes::VerifyTypes, data.to_string()).as_slice() {
         [Token::Uint(verify_block_height), Token::Tuple(verify_result), Token::Uint(verify_version), Token::Array(verify_merkle_paths)] => {
-            let decoded_block_height = Uint128::from(verify_block_height.as_u128());
+            let decoded_block_height = verify_block_height.as_u64();
             let decoded_result = match verify_result.as_slice() {
                 [Token::String(res1), Token::Uint(res2), Token::Bytes(res3), Token::Uint(res4), Token::Uint(res5), Token::Uint(res6), Token::Uint(res7), Token::Uint(res8), Token::Uint(res9), Token::Uint(res10), Token::Bytes(res11)] => Result {
                     client_id: res1.to_string(),
@@ -229,7 +229,7 @@ pub fn eth_decode_verify_data(data: &Token) -> VerifyDataParams {
 pub fn eth_decode_verify_count(data: &Token) -> VerifyCountParams {
     return match eth_decode(AbiTypes::VerifyCountTypes, data.to_string()).as_slice() {
         [Token::Uint(verify_block_height), Token::Uint(verify_count), Token::Uint(verify_version), Token::Array(verify_merkle_paths)] => {
-            let decoded_block_height = Uint128::from(verify_block_height.as_u128());
+            let decoded_block_height = verify_block_height.as_u64();
             let decoded_count = verify_count.as_u64();
             let decoded_version = Uint128::from(verify_version.as_u128());
             let mut decoded_merkle_paths: Vec<iavl_merkle_path::Data> = Vec::new();
