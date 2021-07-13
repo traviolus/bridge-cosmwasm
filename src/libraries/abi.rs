@@ -1,4 +1,4 @@
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{Uint128, StdResult, StdError};
 use ethabi::{decode as EthDecode, ParamType, Token};
 use hex::decode;
 
@@ -120,7 +120,7 @@ pub fn eth_decode(types: AbiTypes, msg: String) -> Vec<Token> {
     decoded.unwrap()
 }
 
-pub fn eth_decode_relay_data(data: &Token) -> RelayBlockParams {
+pub fn eth_decode_relay_data(data: &Token) -> StdResult<RelayBlockParams> {
     return match eth_decode(AbiTypes::RelayTypes, data.to_string()).as_slice() {
         [Token::Tuple(relay_multi_store), Token::Tuple(relay_merkle_paths), Token::Array(relay_signatures)] => {
             let decoded_multi_store = match relay_multi_store.as_slice() {
@@ -131,7 +131,7 @@ pub fn eth_decode_relay_data(data: &Token) -> RelayBlockParams {
                     params_to_slash_stores_merkle_hash: mult4.to_vec(),
                     staking_to_upgrade_stores_merkle_hash: mult5.to_vec(),
                 },
-                _ => panic!("Invalid multi store data"),
+                _ => return Err(StdError::generic_err("Invalid multi store data")),
             };
             let decoded_merkle_paths = match relay_merkle_paths.as_slice() {
                 [Token::FixedBytes(merk1), Token::Uint(merk2), Token::Uint(merk3), Token::Uint(merk4), Token::FixedBytes(merk5), Token::FixedBytes(merk6), Token::FixedBytes(merk7), Token::FixedBytes(merk8)] => block_header_merkle_path::Data {
@@ -144,13 +144,13 @@ pub fn eth_decode_relay_data(data: &Token) -> RelayBlockParams {
                     last_results_hash: merk7.to_vec(),
                     evidence_and_proposer_hash: merk8.to_vec(),
                 },
-                _ => panic!("Invalid merkle paths"),
+                _ => return Err(StdError::generic_err("Invalid merkle paths")),
             };
             let mut decoded_signatures: Vec<tm_signature::Data> = Vec::new();
             for data_tuple in relay_signatures.as_slice() {
                 let data = match data_tuple {
                     Token::Tuple(arr) => arr,
-                    _ => panic!("Invalid signatures"),
+                    _ => return Err(StdError::generic_err("Invalid signatures")),
                 };
                 let signature_item = match data.as_slice() {
                     [Token::FixedBytes(sign1), Token::FixedBytes(sign2), Token::Uint(sign3), Token::Bytes(sign4), Token::Bytes(sign5)] => tm_signature::Data {
@@ -160,22 +160,22 @@ pub fn eth_decode_relay_data(data: &Token) -> RelayBlockParams {
                         signed_data_prefix: sign4.to_vec(),
                         signed_data_suffix: sign5.to_vec(),
                     },
-                    _ => panic!("Invalid signatures"),
+                    _ => return Err(StdError::generic_err("Invalid signatures")),
                 };
                 decoded_signatures.push(signature_item);
             }
 
-            RelayBlockParams {
+            Ok(RelayBlockParams {
                 multi_store: decoded_multi_store,
                 merkle_paths: decoded_merkle_paths,
                 signatures: decoded_signatures,
-            }
+            })
         },
-        _ => panic!("Invalid relay block data"),
+        _ => Err(StdError::generic_err("Invalid relay block data")),
     };
 }
 
-pub fn eth_decode_verify_data(data: &Token) -> VerifyDataParams {
+pub fn eth_decode_verify_data(data: &Token) -> StdResult<VerifyDataParams> {
     return match eth_decode(AbiTypes::VerifyTypes, data.to_string()).as_slice() {
         [Token::Uint(verify_block_height), Token::Tuple(verify_result), Token::Uint(verify_version), Token::Array(verify_merkle_paths)] => {
             let decoded_block_height = verify_block_height.as_u64();
@@ -193,14 +193,14 @@ pub fn eth_decode_verify_data(data: &Token) -> VerifyDataParams {
                     resolve_status: ResolveStatus::from_u64(res10.as_u64()),
                     result: res11.to_vec(),
                 },
-                _ => panic!("Invalid verify result")
+                _ => return Err(StdError::generic_err("Invalid verify result"))
             };
             let decoded_version = Uint128::from(verify_version.as_u128());
             let mut decoded_merkle_paths: Vec<iavl_merkle_path::Data> = Vec::new();
             for data_tuple in verify_merkle_paths.as_slice() {
                 let data = match data_tuple {
                     Token::Tuple(arr) => arr,
-                    _ => panic!("Invalid merkle paths"),
+                    _ => return Err(StdError::generic_err("Invalid merkle paths")),
                 };
                 let merkle_paths_item = match data.as_slice() {
                     [Token::Bool(mer1), Token::Uint(mer2), Token::Uint(mer3), Token::Uint(mer4), Token::FixedBytes(mer5)] => iavl_merkle_path::Data {
@@ -210,23 +210,23 @@ pub fn eth_decode_verify_data(data: &Token) -> VerifyDataParams {
                         sub_tree_version: Uint128::from(mer4.as_u128()),
                         sibling_hash: mer5.to_vec(),
                     },
-                    _ => panic!("Invalid merkle paths"),
+                    _ => return Err(StdError::generic_err("Invalid merkle paths")),
                 };
                 decoded_merkle_paths.push(merkle_paths_item);
             }
 
-            VerifyDataParams {
+            Ok(VerifyDataParams {
                 block_height: decoded_block_height,
                 result: decoded_result,
                 version: decoded_version,
                 merkle_paths: decoded_merkle_paths,
-            }
+            })
         },
-        _ => panic!("Invalid verify oracle data"),
+        _ => Err(StdError::generic_err("Invalid verify oracle data")),
     };
 }
 
-pub fn eth_decode_verify_count(data: &Token) -> VerifyCountParams {
+pub fn eth_decode_verify_count(data: &Token) -> StdResult<VerifyCountParams> {
     return match eth_decode(AbiTypes::VerifyCountTypes, data.to_string()).as_slice() {
         [Token::Uint(verify_block_height), Token::Uint(verify_count), Token::Uint(verify_version), Token::Array(verify_merkle_paths)] => {
             let decoded_block_height = verify_block_height.as_u64();
@@ -236,7 +236,7 @@ pub fn eth_decode_verify_count(data: &Token) -> VerifyCountParams {
             for data_tuple in verify_merkle_paths.as_slice() {
                 let data = match data_tuple {
                     Token::Tuple(arr) => arr,
-                    _ => panic!("Invalid merkle paths"),
+                    _ => return Err(StdError::generic_err("Invalid merkle paths")),
                 };
                 let merkle_paths_item = match data.as_slice() {
                     [Token::Bool(mer1), Token::Uint(mer2), Token::Uint(mer3), Token::Uint(mer4), Token::FixedBytes(mer5)] => iavl_merkle_path::Data {
@@ -246,19 +246,19 @@ pub fn eth_decode_verify_count(data: &Token) -> VerifyCountParams {
                         sub_tree_version: Uint128::from(mer4.as_u128()),
                         sibling_hash: mer5.to_vec(),
                     },
-                    _ => panic!("Invalid merkle paths"),
+                    _ => return Err(StdError::generic_err("Invalid merkle paths")),
                 };
                 decoded_merkle_paths.push(merkle_paths_item);
             }
 
-            VerifyCountParams {
+            Ok(VerifyCountParams {
                 block_height: decoded_block_height,
                 count: decoded_count,
                 version: decoded_version,
                 merkle_paths: decoded_merkle_paths,
-            }
+            })
         },
-        _ => panic!("Invalid verify requests count data"),
+        _ => Err(StdError::generic_err("Invalid verify requests count data")),
     };
 }
 

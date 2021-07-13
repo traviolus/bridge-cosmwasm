@@ -20,7 +20,7 @@ impl Data {
         let mut hasher = Sha256::new();
         hasher.update([self.signed_data_prefix.as_slice(), block_hash.as_slice(), self.signed_data_suffix.as_slice()].concat());
         let hash_result = Vec::from(&hasher.finalize()[..]);
-        let addr_result = ecrecover(hash_result, self.r, self.s, self.v);
+        let addr_result = ecrecover(hash_result, self.r, self.s, self.v).unwrap();
         let mut hasher = Keccak256::new();
         hasher.update(addr_result.as_slice());
         let result = &hasher.finalize()[12..32];

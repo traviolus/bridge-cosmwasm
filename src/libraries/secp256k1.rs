@@ -1,5 +1,6 @@
 use num::{BigInt, ToPrimitive, bigint::Sign::Plus};
 use hex::{decode};
+use cosmwasm_std::{StdResult, StdError};
 
 fn modulus(a: &BigInt, b: &BigInt) -> BigInt {
     ((a % b) + b) % b
@@ -43,10 +44,10 @@ fn ecc_double(a: &(BigInt, BigInt)) -> (BigInt, BigInt) {
     (x, y)
 }
 
-fn ecc_mul(point: (BigInt, BigInt), scalar: BigInt) -> (BigInt, BigInt) {
+fn ecc_mul(point: (BigInt, BigInt), scalar: BigInt) -> StdResult<(BigInt, BigInt)> {
     let _p: BigInt = BigInt::from_bytes_be(Plus, decode("fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f").unwrap().as_slice());
     if scalar == BigInt::from(0i8) || scalar >= _p {
-        panic!("INVALID_SCALAR_OR_PRIVATEKEY");
+        return Err(StdError::generic_err("INVALID_SCALAR_OR_PRIVATEKEY"));
     }
     let scalar_bin = format!("{:b}", &scalar);
     let mut q = point.clone();
@@ -56,7 +57,7 @@ fn ecc_mul(point: (BigInt, BigInt), scalar: BigInt) -> (BigInt, BigInt) {
             q = ecc_add(&q, &point)
         }
     }
-    q
+    Ok(q)
 }
 
 fn to_base(n: BigInt, b: BigInt) -> Vec<BigInt> {
@@ -117,15 +118,15 @@ fn ecc_sqrt(a: BigInt, p: BigInt) -> (BigInt, BigInt) {
     (x1.clone().0, modulus(&-(&x1.0), &p))
 }
 
-pub fn ecrecover(_e: Vec<u8>, _r: Vec<u8>, _s: Vec<u8>, v: u8) -> Vec<u8> {
+pub fn ecrecover(_e: Vec<u8>, _r: Vec<u8>, _s: Vec<u8>, v: u8) -> StdResult<Vec<u8>> {
     if _e.len() != 32usize {
-        panic!("size of message hash must be 32");
+        return Err(StdError::generic_err("size of message hash must be 32"));
     }
     if _r.len() != 32usize {
-        panic!("size of r must be 32");
+        return Err(StdError::generic_err("size of r must be 32"));
     }
     if _s.len() != 32usize {
-        panic!("size of s must be 32");
+        return Err(StdError::generic_err("size of s must be 32"));
     }
 
     let _p: BigInt = BigInt::from_bytes_be(Plus, decode("fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f").unwrap().as_slice());
@@ -148,16 +149,16 @@ pub fn ecrecover(_e: Vec<u8>, _r: Vec<u8>, _s: Vec<u8>, v: u8) -> Vec<u8> {
     } else if v == 28u8 {
         y = if modulus(&y1, &BigInt::from(2i8)) == BigInt::from(1i8) { &y1 } else { &y2 };
     } else {
-        panic!("ECRECOVER_ERROR: v must be 27 or 28");
+        return Err(StdError::generic_err("ECRECOVER_ERROR: v must be 27 or 28"));
     }
 
     let r_case = (x.clone(), modulus(&y, &_n));
     let x_inv = inv_mod(x.clone(), &_n);
-    let gxh = ecc_mul(_g, modulus(&-&e, &_n));
+    let gxh = ecc_mul(_g, modulus(&-&e, &_n)).unwrap();
 
-    let pubkey = ecc_mul(ecc_add(&gxh, &ecc_mul(r_case, s)), x_inv);
+    let pubkey = ecc_mul(ecc_add(&gxh, &ecc_mul(r_case, s).unwrap()), x_inv).unwrap();
 
-    return decode([&format!("{:#064x}", pubkey.0)[2..], &format!("{:#064x}", pubkey.1)[2..]].concat()).unwrap();
+    Ok(decode([&format!("{:#064x}", pubkey.0)[2..], &format!("{:#064x}", pubkey.1)[2..]].concat()).unwrap())
 }
 
 #[cfg(test)]
@@ -211,7 +212,7 @@ mod tests {
         hasher.update([signed_data_prefix.as_slice(), block_hash.as_slice(), signed_data_suffix.as_slice()].concat());
         let hash_result = Vec::from(&hasher.finalize()[..]);
 
-        let result = ecrecover(hash_result, r, s, v);
+        let result = ecrecover(hash_result, r, s, v).unwrap();
         let mut hasher = Keccak256::new();
         hasher.update(result.as_slice());
         let result = &hasher.finalize()[12..32];

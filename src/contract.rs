@@ -28,7 +28,7 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
     for idx in 0usize..msg.validators.len() {
         let validator = &msg.validators[idx];
         match validators_power_read(&deps.storage).get(&validator.addr.as_slice()) {
-            Some(_data) => panic!("DUPLICATION_IN_INITIAL_VALIDATOR_SET"),
+            Some(_data) => return Err(StdError::generic_err("DUPLICATION_IN_INITIAL_VALIDATOR_SET")),
             _ => {
                 validators_power(&mut deps.storage).set(&validator.addr.as_slice(), validator.power.to_string().as_bytes());
                 let old_total_validator_power = total_validator_power_read(&deps.storage).load().unwrap();
@@ -97,7 +97,7 @@ pub fn try_relay_block<S: Storage, A: Api, Q: Querier>(
     for idx in 0usize..signatures.len() {
         let signer = signatures[idx].clone().recover_signer(block_header);
         if HexEncode(signer.as_slice()).to_ascii_lowercase() <= last_signer_hex {
-            panic!("INVALID_SIGNATURE_SIGNER_ORDER");
+            return Err(StdError::generic_err("INVALID_SIGNATURE_SIGNER_ORDER"));
         }
         let value = match validators_power_state.get(signer.as_slice()) {
             Some(data) => u128::from_str(String::from_utf8(data).unwrap().as_str()).unwrap(),
@@ -108,7 +108,7 @@ pub fn try_relay_block<S: Storage, A: Api, Q: Querier>(
     }
     let total_validator_power_state = total_validator_power(&mut deps.storage);
     if sum_voting_power * 3 <= total_validator_power_state.load().unwrap().u128() * 2 {
-        panic!("INSUFFICIENT_VALIDATOR_SIGNATURES");
+        return Err(StdError::generic_err("INSUFFICIENT_VALIDATOR_SIGNATURES"));
     }
     let mut block_details_state = block_details(&mut deps.storage);
     let new_block_detail = BlockDetail {
@@ -162,14 +162,14 @@ pub fn try_verify_oracle_data<S: Storage, A: Api, Q: Querier>(
             let block: BlockDetail = bincode::deserialize(data).unwrap();
             block.oracle_state
         },
-        None => panic!("NO_ORACLE_ROOT_STATE_DATA")
+        None => return Err(StdError::generic_err("NO_ORACLE_ROOT_STATE_DATA")),
     };
     let mut hasher = Sha256::new();
     hasher.update(result.clone().encode());
     let data_hash = &hasher.finalize()[..];
     let verify_proof = try_verify_proof(oracle_state_root, version, [&[255u8][..], &result.request_id.to_be_bytes()[..]].concat(), Vec::from(data_hash), merkle_paths);
     if !verify_proof {
-        panic!("INVALID_ORACLE_DATA_PROOF");
+        return Err(StdError::generic_err("INVALID_ORACLE_DATA_PROOF"));
     }
     Ok(VerifyOracleDataResponse { result })
 }
@@ -180,16 +180,16 @@ pub fn try_relay_and_verify<S: Storage, A: Api, Q: Querier>(
 ) -> StdResult<HandleResponse> {
     return match eth_decode(AbiTypes::RelayAndVerifyTypes, data).as_slice() {
         [relay_data, verify_data] => {
-            let decoded_relay_data = eth_decode_relay_data(relay_data);
+            let decoded_relay_data = eth_decode_relay_data(relay_data).unwrap();
             match try_relay_block(deps, decoded_relay_data.multi_store, decoded_relay_data.merkle_paths, decoded_relay_data.signatures) {
                 Ok(_result) => {},
-                _ => panic!("RELAY_BLOCK_FAILED"),
+                _ => return Err(StdError::generic_err("RELAY_BLOCK_FAILED")),
             }
             println!("RELAY SUCCESS");
-            let decoded_verify_data = eth_decode_verify_data(verify_data);
+            let decoded_verify_data = eth_decode_verify_data(verify_data).unwrap();
             let verify_result = match try_verify_oracle_data(deps, decoded_verify_data.block_height, decoded_verify_data.result, decoded_verify_data.version, decoded_verify_data.merkle_paths) {
                 Ok(result) => result.result,
-                _ => panic!("VERIFY_ORACLE_DATA_FAILED"),
+                _ => return Err(StdError::generic_err("VERIFY_ORACLE_DATA_FAILED")),
             };
             println!("VERIFY SUCCESS");
 
@@ -210,7 +210,7 @@ pub fn try_verify_requests_count<S: Storage, A: Api, Q: Querier>(
 ) -> StdResult<VerifyRequestsCountResponse> {
     let block_detail: BlockDetail = match block_details_read(&deps.storage).get(&block_height.to_be_bytes()) {
         Some(data) => bincode::deserialize(data.as_slice()).unwrap(),
-        None => panic!("NO_ORACLE_ROOT_STATE_DATA"),
+        None => return Err(StdError::generic_err("NO_ORACLE_ROOT_STATE_DATA")),
     };
     let mut buf_key: Vec<u8> = Vec::new();
     encode_key(
@@ -226,7 +226,7 @@ pub fn try_verify_requests_count<S: Storage, A: Api, Q: Querier>(
     let data_hash = &hasher.finalize()[..];
     let verify_proof = try_verify_proof(block_detail.oracle_state, version, HexDecode("0052657175657374436f756e74").unwrap(), Vec::from(data_hash), merkle_paths);
     if !verify_proof {
-        panic!("INVALID_ORACLE_DATA_PROOF");
+        return Err(StdError::generic_err("INVALID_ORACLE_DATA_PROOF"));
     }
     Ok(VerifyRequestsCountResponse { time_second: block_detail.time_second, count })
 }

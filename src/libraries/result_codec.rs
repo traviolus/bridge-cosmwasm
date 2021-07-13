@@ -17,7 +17,7 @@ impl ResolveStatus {
             1 => ResolveStatus::ResolveStatusSuccess,
             2 => ResolveStatus::ResolveStatusFailure,
             3 => ResolveStatus::ResolveStatusExpired,
-            _ => panic!("Unknown value: {}", value),
+            _ => ResolveStatus::ResolveStatusOpenUnspecified,
         }
     }
 }
