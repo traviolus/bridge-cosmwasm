@@ -18,6 +18,7 @@ pub struct InitMsg {
 pub enum HandleMsg {
     RelayBlock { multi_store: multi_store::Data, merkle_paths: block_header_merkle_path::Data, signatures: Vec<tm_signature::Data> },
     UpdateValidatorsPower { validators: Vec<ValidatorWithPower> },
+    // RelayAndVerify { data: String },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -42,4 +43,9 @@ pub struct VerifyOracleDataResponse {
 pub struct VerifyRequestsCountResponse {
     pub time_second: u64,
     pub count: u64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct RelayAndVerifyResponse {
+    pub result: Result,
 }

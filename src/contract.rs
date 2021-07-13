@@ -1,5 +1,5 @@
 use cosmwasm_std::{to_binary, Api, Binary, Env, Extern, HandleResponse, InitResponse, Querier,
-                   StdResult, Storage, ReadonlyStorage, Uint128};
+                   StdResult, Storage, ReadonlyStorage, Uint128, StdError};
 use std::ops::Sub;
 use sha2::{Sha256, Digest};
 use std::str::FromStr;
@@ -7,7 +7,7 @@ use hex::{encode as HexEncode, decode as HexDecode};
 use prost::encoding::{encode_key, encode_varint, WireType};
 
 use crate::msg::{HandleMsg, InitMsg, QueryMsg, ValidatorWithPower, VerifyOracleDataResponse,
-                 VerifyRequestsCountResponse};
+                 VerifyRequestsCountResponse, RelayAndVerifyResponse};
 use crate::state::{validators_power, total_validator_power, block_details, BlockDetail, owner,
                    block_details_read, total_validator_power_read, validators_power_read};
 use crate::libraries::multi_store;
@@ -16,6 +16,7 @@ use crate::libraries::block_header_merkle_path;
 use crate::libraries::iavl_merkle_path;
 use crate::libraries::result_codec;
 use crate::libraries::utils;
+use crate::libraries::abi::{AbiTypes, get_abi_types, eth_decode};
 
 pub fn init<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
@@ -170,6 +171,19 @@ pub fn try_verify_oracle_data<S: Storage, A: Api, Q: Querier>(
         panic!("INVALID_ORACLE_DATA_PROOF");
     }
     Ok(VerifyOracleDataResponse { result })
+}
+
+pub fn try_relay_and_verify<S: Storage, A: Api, Q: Querier>(
+    deps: &mut Extern<S, A, Q>,
+    data: String
+) -> StdResult<RelayAndVerifyResponse> {
+    return match eth_decode(AbiTypes::RelayAndVerifyTypes, data).as_slice() {
+        [relay_data, verify_data] => {
+            //TODO
+            Ok(RelayAndVerifyResponse)
+        },
+        _ => StdError::generic_err("Invalid message"),
+    }
 }
 
 pub fn try_verify_requests_count<S: Storage, A: Api, Q: Querier>(

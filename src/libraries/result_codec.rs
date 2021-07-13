@@ -10,6 +10,18 @@ pub enum ResolveStatus {
     ResolveStatusExpired = 3,
 }
 
+impl ResolveStatus {
+    pub fn from_u64(value: u64) -> ResolveStatus {
+        match value {
+            0 => ResolveStatus::ResolveStatusOpenUnspecified,
+            1 => ResolveStatus::ResolveStatusSuccess,
+            2 => ResolveStatus::ResolveStatusFailure,
+            3 => ResolveStatus::ResolveStatusExpired,
+            _ => panic!("Unknown value: {}", value),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Result {
     pub client_id: String,
