@@ -1,4 +1,4 @@
-use num::{BigInt, ToPrimitive, bigint::Sign::Plus};
+use num::{BigInt, ToPrimitive, bigint::Sign::Plus, Zero, One, Integer};
 use hex::decode;
 use cosmwasm_std::{StdResult, StdError};
 
@@ -14,7 +14,7 @@ fn load_constant() -> Constant {
     return Constant {
         _p: BigInt::from_bytes_be(Plus, decode("fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f").unwrap().as_slice()),
         _n: BigInt::from_bytes_be(Plus, decode("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141").unwrap().as_slice()),
-        _a: BigInt::from(0i8),
+        _a: BigInt::zero(),
         _b: BigInt::from(7i8),
         _g: (BigInt::from_bytes_be(Plus, decode("79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798").unwrap().as_slice()), BigInt::from_bytes_be(Plus, decode("483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8").unwrap().as_slice())),
     }
@@ -28,11 +28,11 @@ fn mod_pow(a: &BigInt, b: &BigInt, c: &BigInt) -> BigInt {
     let mut base = a.clone();
     let mut exp = b.clone();
     let modulus = c.clone();
-    if modulus == BigInt::from(1i8) { return BigInt::from(0i8) }
-    let mut result = BigInt::from(1i8);
+    if modulus == BigInt::one() { return BigInt::from(0i8) }
+    let mut result = BigInt::one();
     base = &base % &modulus;
-    while &exp > &BigInt::from(0i8) {
-        if &exp % BigInt::from(2i8) == BigInt::from(1i8) {
+    while &exp > &BigInt::zero() {
+        if exp.is_odd() {
             result = &result * &base % &modulus;
         }
         exp = &exp >> 1;
@@ -42,11 +42,11 @@ fn mod_pow(a: &BigInt, b: &BigInt, c: &BigInt) -> BigInt {
 }
 
 fn inv_mod(a: BigInt, n: &BigInt) -> BigInt {
-    let mut lm = BigInt::from(1i8);
-    let mut hm = BigInt::from(0i8);
+    let mut lm = BigInt::one();
+    let mut hm = BigInt::zero();
     let mut low = modulus(&a, n);
     let mut high = n.clone();
-    while &low > &BigInt::from(1i8) {
+    while &low > &BigInt::one() {
         let ratio = &high / &low;
         let nm = &hm - &lm * &ratio;
         let new = &high - &low * &ratio;
@@ -73,7 +73,7 @@ fn ecc_double(a: &(BigInt, BigInt), constant: &Constant) -> (BigInt, BigInt) {
 }
 
 fn ecc_mul(point: &(BigInt, BigInt), scalar: BigInt, constant: &Constant) -> StdResult<(BigInt, BigInt)> {
-    if scalar == BigInt::from(0i8) || scalar >= constant._p {
+    if scalar == BigInt::zero() || scalar >= constant._p {
         return Err(StdError::generic_err("INVALID_SCALAR_OR_PRIVATEKEY"));
     }
     let scalar_bin = format!("{:b}", &scalar);
@@ -93,7 +93,7 @@ fn to_base(n: BigInt, b: BigInt) -> Vec<BigInt> {
     }
     let mut temp = n.clone();
     let mut ans = Vec::new();
-    while temp != BigInt::from(0i8) {
+    while temp != BigInt::zero() {
         ans = [vec![modulus(&temp, &b)], ans].concat();
         temp /= &b;
     }
@@ -103,18 +103,18 @@ fn to_base(n: BigInt, b: BigInt) -> Vec<BigInt> {
 fn ecc_sqrt(a: BigInt, p: &BigInt) -> (BigInt, BigInt) {
     let mut n = a.clone();
     n = modulus(&n, p);
-    if n == BigInt::from(0i8) || n == BigInt::from(1i8) {
+    if n == BigInt::zero() || n == BigInt::one() {
         return (n.clone(), modulus(&-&n, p));
     }
-    let phi = p - BigInt::from(1i8);
-    if mod_pow(&n, &(&phi/BigInt::from(2i8)), p) != BigInt::from(1i8) {
-        return (BigInt::from(0u8), BigInt::from(0u8));
+    let phi = p - BigInt::one();
+    if mod_pow(&n, &(&phi/BigInt::from(2i8)), p) != BigInt::one() {
+        return (BigInt::zero(), BigInt::zero());
     }
     if modulus(p, &BigInt::from(4i8)) == BigInt::from(3i8) {
-        let ans = mod_pow(&n, &((p + BigInt::from(1i8)) / BigInt::from(4i8)), p);
+        let ans = mod_pow(&n, &((p + BigInt::one()) / BigInt::from(4i8)), p);
         return (ans.clone(), modulus(&-&ans, p));
     }
-    let mut aa = BigInt::from(0u8);
+    let mut aa = BigInt::zero();
     for i in 1..p.to_i128().unwrap() {
         let temp = mod_pow(&(modulus(&(&i * &i - &n), p)), &(&phi / BigInt::from(2i8)), p);
         if temp == phi {
@@ -130,10 +130,10 @@ fn ecc_sqrt(a: BigInt, p: &BigInt) -> (BigInt, BigInt) {
         return (modulus(&BigInt::from(a * c + b * d * &w), p), modulus(&(a * d + b * c), p));
     }
 
-    let mut x1 = (aa.clone(), BigInt::from(1i8));
+    let mut x1 = (aa.clone(), BigInt::one());
     let mut x2 = cipolla_mult(&x1, &x1, &aa * &aa - &n, p);
     for i in 1usize..exponent.len() {
-        if exponent[i] == BigInt::from(0u8) {
+        if exponent[i] == BigInt::zero() {
             x2 = cipolla_mult(&x2, &x1, &aa * &aa - &n, p);
             x1 = cipolla_mult(&x1, &x1, &aa * &aa - &n, p);
         } else {
@@ -166,9 +166,9 @@ pub fn ecrecover(_e: Vec<u8>, _r: Vec<u8>, _s: Vec<u8>, v: u8) -> StdResult<Vec<
     let mut y = &BigInt::default();
     let (y1, y2) = ecc_sqrt(&x * &x * &x + &x * &constant._a + &constant._b, &constant._p);
     if v == 27u8 {
-        y = if modulus(&y1, &BigInt::from(2i8)) == BigInt::from(0i8) { &y1 } else { &y2 };
+        y = if modulus(&y1, &BigInt::from(2i8)) == BigInt::zero() { &y1 } else { &y2 };
     } else if v == 28u8 {
-        y = if modulus(&y1, &BigInt::from(2i8)) == BigInt::from(1i8) { &y1 } else { &y2 };
+        y = if modulus(&y1, &BigInt::from(2i8)) == BigInt::one() { &y1 } else { &y2 };
     } else {
         return Err(StdError::generic_err("ECRECOVER_ERROR: v must be 27 or 28"));
     }
