@@ -50,10 +50,10 @@ fn inv_mod(a: BigInt, n: &BigInt) -> BigInt {
         let ratio = &high / &low;
         let nm = &hm - &lm * &ratio;
         let new = &high - &low * &ratio;
-        hm = lm.clone();
-        lm = nm.clone();
-        high = low.clone();
-        low = new.clone();
+        hm = lm;
+        lm = nm;
+        high = low;
+        low = new;
     }
     return modulus(&lm, n);
 }
