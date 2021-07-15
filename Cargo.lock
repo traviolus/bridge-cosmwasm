@@ -113,6 +113,7 @@ name = "bridge-cosm-wasm"
 version = "0.1.0"
 dependencies = [
  "bincode",
+ "cosmwasm-crypto 0.15.0",
  "cosmwasm-schema",
  "cosmwasm-std 0.10.1",
  "cosmwasm-storage",
@@ -185,6 +186,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "cosmwasm-crypto"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf6ae19e862fefda01c0747fb67ce5b454646f71574e24e15732f0250ca73ee2"
+dependencies = [
+ "digest",
+ "ed25519-zebra",
+ "k256",
+ "rand_core",
+ "thiserror",
+]
+
+[[package]]
 name = "cosmwasm-derive"
 version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -223,7 +237,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "22de097cf4f7e7f575f51a22de7260932756ccfe499e005f98244a3043470e48"
 dependencies = [
  "base64 0.13.0",
- "cosmwasm-crypto",
+ "cosmwasm-crypto 0.14.1",
  "cosmwasm-derive",
  "schemars 0.8.3",
  "serde",

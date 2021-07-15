@@ -1,5 +1,5 @@
 use cosmwasm_std::{to_binary, Api, Binary, Env, Extern, HandleResponse, InitResponse, Querier,
-                   StdResult, Storage, ReadonlyStorage, Uint128, StdError};
+                   StdResult, Storage, ReadonlyStorage, Uint128, StdError, CanonicalAddr};
 use std::ops::Sub;
 use sha2::{Sha256, Digest};
 use std::str::FromStr;
@@ -7,7 +7,7 @@ use hex::{encode as HexEncode, decode as HexDecode};
 use prost::encoding::{encode_key, encode_varint, WireType};
 
 use crate::msg::{HandleMsg, InitMsg, QueryMsg, ValidatorWithPower, VerifyOracleDataResponse,
-                 VerifyRequestsCountResponse};
+                 VerifyRequestsCountResponse, GetValidatorPowerResponse};
 use crate::state::{validators_power, total_validator_power, block_details, BlockDetail, owner,
                    block_details_read, total_validator_power_read, validators_power_read};
 use crate::libraries::multi_store;
@@ -231,6 +231,17 @@ pub fn try_verify_requests_count<S: Storage, A: Api, Q: Querier>(
     Ok(VerifyRequestsCountResponse { time_second: block_detail.time_second, count })
 }
 
+pub fn try_get_validator<S: Storage, A: Api, Q: Querier>(
+    deps: &Extern<S, A, Q>,
+    validator: CanonicalAddr,
+) -> StdResult<GetValidatorPowerResponse> {
+    let validators_power_state_read = validators_power_read(&deps.storage);
+    match validators_power_state_read.get(&validator.as_slice()) {
+        Some(data) => Ok(GetValidatorPowerResponse { power: Uint128::from(u128::from_str(String::from_utf8(data).unwrap().as_str()).unwrap()) }),
+        _ => Err(StdError::not_found("Validator not found")),
+    }
+}
+
 pub fn query<S: Storage, A: Api, Q: Querier>(
     deps: &Extern<S, A, Q>,
     msg: QueryMsg,
@@ -238,6 +249,7 @@ pub fn query<S: Storage, A: Api, Q: Querier>(
     match msg {
         QueryMsg::VerifyOracleData { block_height, result, version, merkle_paths } => to_binary(&try_verify_oracle_data(deps, block_height, result, version, merkle_paths).unwrap()),
         QueryMsg::VerifyRequestsCount { block_height, count, version, merkle_paths } => to_binary(&try_verify_requests_count(deps, block_height, count, version, merkle_paths).unwrap()),
+        QueryMsg::GetValidatorPower { validator } => to_binary(&try_get_validator(deps, validator).unwrap()),
     }
 }
 
@@ -263,6 +275,39 @@ mod tests {
 
         let res = init(&mut deps, env, msg).unwrap();
         assert_eq!(0, res.messages.len());
+    }
+
+    #[test]
+    fn update_validator_power_test() {
+        let mut deps = mock_dependencies(20, &[]);
+
+        let validators_set: Vec<ValidatorWithPower> = vec![
+            ValidatorWithPower {
+                addr: CanonicalAddr::from(decode("652D89a66Eb4eA55366c45b1f9ACfc8e2179E1c5").unwrap()),
+                power: Uint128::from(100u64),
+            }
+        ];
+        let msg = InitMsg { validators: validators_set };
+        let env = mock_env("initiator", &[]);
+        let _res = init(&mut deps, env, msg).unwrap();
+
+        let msg = QueryMsg::GetValidatorPower { validator: CanonicalAddr::from(decode("652D89a66Eb4eA55366c45b1f9ACfc8e2179E1c5").unwrap()) };
+        let res: GetValidatorPowerResponse = from_binary(&query(&deps, msg).unwrap()).unwrap();
+        assert_eq!(res, GetValidatorPowerResponse { power: Uint128::from(100u64) });
+
+        let validators_set: Vec<ValidatorWithPower> = vec![
+            ValidatorWithPower {
+                addr: CanonicalAddr::from(decode("652D89a66Eb4eA55366c45b1f9ACfc8e2179E1c5").unwrap()),
+                power: Uint128::from(20u64),
+            }
+        ];
+        let msg = HandleMsg::UpdateValidatorsPower { validators: validators_set };
+        let env = mock_env("sender", &[]);
+        let _res = handle(&mut deps, env, msg).unwrap();
+
+        let msg = QueryMsg::GetValidatorPower { validator: CanonicalAddr::from(decode("652D89a66Eb4eA55366c45b1f9ACfc8e2179E1c5").unwrap()) };
+        let res: GetValidatorPowerResponse = from_binary(&query(&deps, msg).unwrap()).unwrap();
+        assert_eq!(res, GetValidatorPowerResponse { power: Uint128::from(20u64) });
     }
 
     #[test]

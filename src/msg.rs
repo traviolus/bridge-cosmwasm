@@ -24,6 +24,7 @@ pub enum HandleMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
+    GetValidatorPower { validator: CanonicalAddr },
     VerifyOracleData { block_height: u64, result: Result, version: Uint128, merkle_paths: Vec<iavl_merkle_path::Data> },
     VerifyRequestsCount { block_height: u64, count: u64, version: Uint128, merkle_paths: Vec<iavl_merkle_path::Data> },
 }
@@ -43,4 +44,9 @@ pub struct VerifyOracleDataResponse {
 pub struct VerifyRequestsCountResponse {
     pub time_second: u64,
     pub count: u64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct GetValidatorPowerResponse {
+    pub power: Uint128,
 }

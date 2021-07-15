@@ -3,8 +3,7 @@ use schemars::JsonSchema;
 use sha2::{Sha256, Digest as sha2Digest};
 use sha3::Keccak256;
 use cosmwasm_std::CanonicalAddr;
-
-use crate::libraries::secp256k1::ecrecover;
+use cosmwasm_crypto::secp256k1_recover_pubkey;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Data {
@@ -20,9 +19,10 @@ impl Data {
         let mut hasher = Sha256::new();
         hasher.update([self.signed_data_prefix.as_slice(), block_hash.as_slice(), self.signed_data_suffix.as_slice()].concat());
         let hash_result = Vec::from(&hasher.finalize()[..]);
-        let addr_result = ecrecover(hash_result, self.r, self.s, self.v).unwrap();
+        let signature = [self.r, self.s].concat();
+        let addr_result = secp256k1_recover_pubkey(hash_result.as_slice(), signature.as_slice(), self.v-27u8).unwrap();
         let mut hasher = Keccak256::new();
-        hasher.update(addr_result.as_slice());
+        hasher.update(&addr_result.as_slice()[1..]);
         let result = &hasher.finalize()[12..32];
         return CanonicalAddr::from(result);
     }
