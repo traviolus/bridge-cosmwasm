@@ -2,34 +2,12 @@ use cosmwasm_std::{Uint128, StdResult, StdError};
 use ethabi::{decode as EthDecode, ParamType, Token};
 use hex::decode;
 
+use crate::msg::{RelayBlockParams, VerifyDataParams, VerifyCountParams};
 use crate::libraries::tm_signature;
 use crate::libraries::multi_store;
 use crate::libraries::block_header_merkle_path;
 use crate::libraries::iavl_merkle_path;
-use crate::libraries::result_codec::{Result, ResolveStatus};
-
-#[derive(Debug)]
-pub struct RelayBlockParams {
-    pub multi_store: multi_store::Data,
-    pub merkle_paths: block_header_merkle_path::Data,
-    pub signatures: Vec<tm_signature::Data>
-}
-
-#[derive(Debug)]
-pub struct VerifyDataParams {
-    pub block_height: u64,
-    pub result: Result,
-    pub version: Uint128,
-    pub merkle_paths: Vec<iavl_merkle_path::Data>
-}
-
-#[derive(Debug)]
-pub struct VerifyCountParams {
-    pub block_height: u64,
-    pub count: u64,
-    pub version: Uint128,
-    pub merkle_paths: Vec<iavl_merkle_path::Data>
-}
+use crate::libraries::result_codec::Result;
 
 pub enum AbiTypes {
     RelayTypes,
@@ -190,7 +168,7 @@ pub fn eth_decode_verify_data(data: &Token) -> StdResult<VerifyDataParams> {
                     ans_count: res7.as_u64(),
                     request_time: res8.as_u64(),
                     resolve_time: res9.as_u64(),
-                    resolve_status: ResolveStatus::from_u64(res10.as_u64()),
+                    resolve_status: res10.as_u64(),
                     result: res11.to_vec(),
                 },
                 _ => return Err(StdError::generic_err("Invalid verify result"))

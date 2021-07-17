@@ -20,6 +20,15 @@ impl ResolveStatus {
             _ => ResolveStatus::ResolveStatusOpenUnspecified,
         }
     }
+
+    pub fn to_u64(self) -> u64 {
+        match self {
+            ResolveStatus::ResolveStatusOpenUnspecified => 0u64,
+            ResolveStatus::ResolveStatusSuccess => 1u64,
+            ResolveStatus::ResolveStatusFailure => 2u64,
+            ResolveStatus::ResolveStatusExpired => 3u64,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -33,7 +42,7 @@ pub struct Result {
     pub ans_count: u64,
     pub request_time: u64,
     pub resolve_time: u64,
-    pub resolve_status: ResolveStatus,
+    pub resolve_status: u64,
     pub result: Vec<u8>,
 }
 
@@ -241,7 +250,7 @@ mod tests {
             ans_count: 1u64,
             request_time: 1591622616u64,
             resolve_time: 1591622618u64,
-            resolve_status: ResolveStatus::ResolveStatusSuccess,
+            resolve_status: ResolveStatus::ResolveStatusSuccess.to_u64(),
             result: decode("00000000009443ee").unwrap(),
         };
         let result01 = data01.encode();
@@ -257,7 +266,7 @@ mod tests {
             ans_count: 1u64,
             request_time: 1591622426u64,
             resolve_time: 1591622429u64,
-            resolve_status: ResolveStatus::ResolveStatusFailure,
+            resolve_status: ResolveStatus::ResolveStatusFailure.to_u64(),
             result: decode("").unwrap(),
         };
         let result02 = data02.encode();
