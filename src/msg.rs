@@ -22,6 +22,7 @@ pub enum HandleMsg {
     RelayCandidateBlock { multi_store: multi_store::Data, merkle_paths: block_header_merkle_path::Data },
     AppendSignature { block_height: u64, signatures: Vec<tm_signature::Data> },
     VerifyAndSaveResult { block_height: u64, result: Result, version: Uint128, merkle_paths: Vec<iavl_merkle_path::Data> },
+    RemoveCandidateBlock { block_height: u64 },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

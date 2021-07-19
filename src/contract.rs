@@ -50,6 +50,7 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
         HandleMsg::RelayCandidateBlock { multi_store, merkle_paths } => try_relay_candidate_block(deps, env, multi_store, merkle_paths),
         HandleMsg::AppendSignature { block_height, signatures } => try_append_signature(deps, env, block_height, signatures),
         HandleMsg::VerifyAndSaveResult { block_height, result, version, merkle_paths } => try_verify_and_save_result(deps, block_height, result, version, merkle_paths),
+        HandleMsg::RemoveCandidateBlock { block_height } => try_remove_candidate_block(deps, env, block_height),
     }
 }
 
@@ -334,6 +335,15 @@ pub fn try_verify_and_save_result<S: Storage, A: Api, Q: Querier>(
     let verified_result_serialized = bincode::serialize(&verify_result).unwrap();
     verified_results(&mut deps.storage).set(verified_result_key, verified_result_serialized.as_slice());
     return Ok(HandleResponse::default());
+}
+
+pub fn try_remove_candidate_block<S: Storage, A: Api, Q: Querier>(
+    deps: &mut Extern<S, A, Q>,
+    env: Env,
+    block_height: u64,
+) -> StdResult<HandleResponse> {
+    candidate_block_details(&mut deps.storage).remove(&[env.message.sender.as_str().as_bytes(), &block_height.to_be_bytes()].concat());
+    Ok(HandleResponse::default())
 }
 
 pub fn try_verify_requests_count<S: Storage, A: Api, Q: Querier>(
