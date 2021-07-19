@@ -313,8 +313,6 @@ pub fn try_append_signature<S: Storage, A: Api, Q: Querier>(
             time_nano_second_fraction: candidate_block_detail.block_detail.time_nano_second_fraction.clone(),
         };
         block_details_state.set(&block_height.to_be_bytes(), &bincode::serialize(&new_block_detail).unwrap());
-        let mut candidate_block_state = candidate_block_details(&mut deps.storage);
-        candidate_block_state.remove(&candidate_block_key);
         let mut res = HandleResponse::default();
         res.log.push(LogAttribute { key: "Result".to_string(), value: "Block detail relayed".to_string() });
         return Ok(res);
@@ -375,7 +373,7 @@ pub fn try_get_validator<S: Storage, A: Api, Q: Querier>(
     let validators_power_state_read = validators_power_read(&deps.storage);
     match validators_power_state_read.get(&validator.as_slice()) {
         Some(data) => Ok(GetValidatorPowerResponse { power: Uint128::from(u128::from_str(String::from_utf8(data).unwrap().as_str()).unwrap()) }),
-        _ => Err(StdError::not_found("Validator not found")),
+        None => Err(StdError::not_found("Validator not found")),
     }
 }
 
@@ -389,7 +387,7 @@ pub fn try_get_result<S: Storage, A: Api, Q: Querier>(
             let deserialized_result: result_codec::Result = bincode::deserialize(data.as_slice()).unwrap();
             Ok(deserialized_result)
         },
-        _ => Err(StdError::not_found("Verified result not found")),
+        None => Err(StdError::not_found("Verified result not found")),
     }
 }
 
@@ -398,10 +396,10 @@ pub fn query<S: Storage, A: Api, Q: Querier>(
     msg: QueryMsg,
 ) -> StdResult<Binary> {
     match msg {
-        QueryMsg::VerifyOracleData { block_height, result, version, merkle_paths } => to_binary(&try_verify_oracle_data(deps, block_height, result, version, merkle_paths).unwrap()),
-        QueryMsg::VerifyRequestsCount { block_height, count, version, merkle_paths } => to_binary(&try_verify_requests_count(deps, block_height, count, version, merkle_paths).unwrap()),
-        QueryMsg::GetValidatorPower { validator } => to_binary(&try_get_validator(deps, validator).unwrap()),
-        QueryMsg::GetResult { request_id } => to_binary(&try_get_result(deps, request_id).unwrap()),
+        QueryMsg::VerifyOracleData { block_height, result, version, merkle_paths } => to_binary(&try_verify_oracle_data(deps, block_height, result, version, merkle_paths)?),
+        QueryMsg::VerifyRequestsCount { block_height, count, version, merkle_paths } => to_binary(&try_verify_requests_count(deps, block_height, count, version, merkle_paths)?),
+        QueryMsg::GetValidatorPower { validator } => to_binary(&try_get_validator(deps, validator)?),
+        QueryMsg::GetResult { request_id } => to_binary(&try_get_result(deps, request_id)?),
     }
 }
 
