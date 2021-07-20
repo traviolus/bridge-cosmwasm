@@ -685,157 +685,85 @@ mod tests {
         let _res = handle(&mut deps, env, msg);
     }
 
-    // #[test]
-    // fn relay_candidate_block_test() {
-    //     let mut deps = mock_dependencies(20, &[]);
-    //     let validators_set: Vec<ValidatorWithPower> = vec![
-    //         ValidatorWithPower {
-    //             addr: CanonicalAddr::from(decode("652D89a66Eb4eA55366c45b1f9ACfc8e2179E1c5").unwrap()),
-    //             power: Uint128::from(100u64),
-    //         },
-    //         ValidatorWithPower {
-    //             addr: CanonicalAddr::from(decode("88e1cd00710495EEB93D4f522d16bC8B87Cb00FE").unwrap()),
-    //             power: Uint128::from(100u64),
-    //         },
-    //         ValidatorWithPower {
-    //             addr: CanonicalAddr::from(decode("aAA22E077492CbaD414098EBD98AA8dc1C7AE8D9").unwrap()),
-    //             power: Uint128::from(100u64),
-    //         },
-    //         ValidatorWithPower {
-    //             addr: CanonicalAddr::from(decode("B956589b6fC5523eeD0d9eEcfF06262Ce84ff260").unwrap()),
-    //             power: Uint128::from(100u64),
-    //         },
-    //     ];
-    //     let msg = InitMsg { validators: validators_set };
-    //     let env = mock_env("initiator", &[]);
-    //     let _res = init(&mut deps, env, msg);
-    //
-    //     let multi_store_data = MultiStoreInputData {
-    //         auth_to_ibc_transfer_stores_merkle_hash: "94FE4A060FCF744C5BFCE1155CF1AB99B386F9170BC1C0105060994AEBEDE65C".to_string(),
-    //         mint_store_merkle_hash: "81A0E5D8922FA8C8FE948D9B4D5698FEFA77E52FB8DF370AE274C43230B4D669".to_string(),
-    //         oracle_iavl_state_hash: "7920D562EC07A9979286FDCDA975F943D41D31974B01B8DC5B1B374878B194DA".to_string(),
-    //         params_to_slash_stores_merkle_hash: "B1AA552EFF4C5CEDE334037AC62520E89AA76FA4326A4C56E9A92996C0BF7E26".to_string(),
-    //         staking_to_upgrade_stores_merkle_hash: "739AA168868729CA2139B3AC5A066BDEB8BF06A059C2FE35E9D7D65504E26F55".to_string(),
-    //     };
-    //     let merkle_paths_data = BlockHeaderInputData {
-    //         version_and_chain_id_hash: "3F02642D9E70D5C1C493A4F732BFE9C9B95A4A42651703B816EDCFC8FADA5312".to_string(),
-    //         height: 3418u64,
-    //         time_second: 1622115652u64,
-    //         time_nano_second: 146102103u32,
-    //         last_block_id_and_other: "E5A87E02ABE1B519CE5C57E8E35F033F5E707D368C6DF352EADFEB41FE69E3B2".to_string(),
-    //         next_validator_hash_and_consensus_hash: "6206F2FFDFBB93B83BD917B05B13CA59C12330268611242F5FD5734E67307915".to_string(),
-    //         last_results_hash: "9FB9C7533CAF1D218DA3AF6D277F6B101C42E3C3B75D784242DA663604DD53C2".to_string(),
-    //         evidence_and_proposer_hash: "8A153906A4AFDFBF3AEA3F0AA4C4002A7F1B9FB0970200F828C8799DF424B00C".to_string(),
-    //     };
-    //
-    //     let msg = HandleMsg::RelayCandidateBlock {
-    //         multi_store: multi_store_data,
-    //         merkle_paths: merkle_paths_data.clone(),
-    //     };
-    //     let env = mock_env("sender01", &[]);
-    //     let res = handle(&mut deps, env, msg).unwrap();
-    //     assert_eq!(res.messages.len(), 0);
-    //
-    //     let query_data: CandidateBlockDetail = bincode::deserialize(&candidate_block_details_read(&deps.storage).get(["sender01".as_bytes(), &merkle_paths_data.height.to_be_bytes()].concat().as_slice()).unwrap().as_slice()).unwrap();
-    //     assert_eq!(query_data, CandidateBlockDetail { block_header: vec![70, 131, 98, 21, 161, 84, 114, 223, 120, 95, 111, 140, 147, 226, 231, 76, 40, 255, 176, 55, 101, 136, 27, 111, 114, 205, 58, 21, 214, 3, 235, 249], last_signer_hex: String::from(""), sum_voting_power: 0u128, block_detail: BlockDetail { oracle_state: vec![121, 32, 213, 98, 236, 7, 169, 151, 146, 134, 253, 205, 169, 117, 249, 67, 212, 29, 49, 151, 75, 1, 184, 220, 91, 27, 55, 72, 120, 177, 148, 218], time_second: 1622115652, time_nano_second_fraction: 146102103 } } )
-    // }
+    #[test]
+    fn relay_candidate_block_test() {
+        let mut deps = mock_dependencies(20, &[]);
+        let validators_set: Vec<ValidatorWithPower> = vec![
+            ValidatorWithPower {
+                addr: CanonicalAddr::from(decode("652D89a66Eb4eA55366c45b1f9ACfc8e2179E1c5").unwrap()),
+                power: Uint128::from(100u64),
+            },
+            ValidatorWithPower {
+                addr: CanonicalAddr::from(decode("88e1cd00710495EEB93D4f522d16bC8B87Cb00FE").unwrap()),
+                power: Uint128::from(100u64),
+            },
+            ValidatorWithPower {
+                addr: CanonicalAddr::from(decode("aAA22E077492CbaD414098EBD98AA8dc1C7AE8D9").unwrap()),
+                power: Uint128::from(100u64),
+            },
+            ValidatorWithPower {
+                addr: CanonicalAddr::from(decode("B956589b6fC5523eeD0d9eEcfF06262Ce84ff260").unwrap()),
+                power: Uint128::from(100u64),
+            },
+        ];
+        let msg = InitMsg { validators: validators_set };
+        let env = mock_env("initiator", &[]);
+        let _res = init(&mut deps, env, msg);
 
-    // #[test]
-    // fn append_signatures_test() {
-    //     let mut deps = mock_dependencies(20, &[]);
-    //     let env = mock_env("initiator", &[]);
-    //     let validators_set: Vec<ValidatorWithPower> = vec![
-    //         ValidatorWithPower {
-    //             addr: CanonicalAddr::from(decode("652D89a66Eb4eA55366c45b1f9ACfc8e2179E1c5").unwrap()),
-    //             power: Uint128::from(100u64),
-    //         },
-    //         ValidatorWithPower {
-    //             addr: CanonicalAddr::from(decode("88e1cd00710495EEB93D4f522d16bC8B87Cb00FE").unwrap()),
-    //             power: Uint128::from(100u64),
-    //         },
-    //         ValidatorWithPower {
-    //             addr: CanonicalAddr::from(decode("aAA22E077492CbaD414098EBD98AA8dc1C7AE8D9").unwrap()),
-    //             power: Uint128::from(100u64),
-    //         },
-    //         ValidatorWithPower {
-    //             addr: CanonicalAddr::from(decode("B956589b6fC5523eeD0d9eEcfF06262Ce84ff260").unwrap()),
-    //             power: Uint128::from(100u64),
-    //         },
-    //     ];
-    //     let msg = InitMsg { validators: validators_set };
-    //     let _res = init(&mut deps, env, msg);
-    //
-    //     let multi_store_data = MultiStoreInputData {
-    //         auth_to_ibc_transfer_stores_merkle_hash: "94FE4A060FCF744C5BFCE1155CF1AB99B386F9170BC1C0105060994AEBEDE65C".to_string(),
-    //         mint_store_merkle_hash: "81A0E5D8922FA8C8FE948D9B4D5698FEFA77E52FB8DF370AE274C43230B4D669".to_string(),
-    //         oracle_iavl_state_hash: "7920D562EC07A9979286FDCDA975F943D41D31974B01B8DC5B1B374878B194DA".to_string(),
-    //         params_to_slash_stores_merkle_hash: "B1AA552EFF4C5CEDE334037AC62520E89AA76FA4326A4C56E9A92996C0BF7E26".to_string(),
-    //         staking_to_upgrade_stores_merkle_hash: "739AA168868729CA2139B3AC5A066BDEB8BF06A059C2FE35E9D7D65504E26F55".to_string(),
-    //     };
-    //     let merkle_paths_data = BlockHeaderInputData {
-    //         version_and_chain_id_hash: "3F02642D9E70D5C1C493A4F732BFE9C9B95A4A42651703B816EDCFC8FADA5312".to_string(),
-    //         height: 3418u64,
-    //         time_second: 1622115652u64,
-    //         time_nano_second: 146102103u32,
-    //         last_block_id_and_other: "E5A87E02ABE1B519CE5C57E8E35F033F5E707D368C6DF352EADFEB41FE69E3B2".to_string(),
-    //         next_validator_hash_and_consensus_hash: "6206F2FFDFBB93B83BD917B05B13CA59C12330268611242F5FD5734E67307915".to_string(),
-    //         last_results_hash: "9FB9C7533CAF1D218DA3AF6D277F6B101C42E3C3B75D784242DA663604DD53C2".to_string(),
-    //         evidence_and_proposer_hash: "8A153906A4AFDFBF3AEA3F0AA4C4002A7F1B9FB0970200F828C8799DF424B00C".to_string(),
-    //     };
-    //
-    //     let msg = HandleMsg::RelayCandidateBlock {
-    //         multi_store: multi_store_data,
-    //         merkle_paths: merkle_paths_data.clone(),
-    //     };
-    //     let env = mock_env("sender02", &[]);
-    //     let _res = handle(&mut deps, env, msg).unwrap();
-    //
-    //     let signature_data = vec![
-    //         SignatureInputData {
-    //             r: "9B27A5994109DC23F315FFB58B1B37E1FBAD2DD675F580073956581AD029446C".to_string(),
-    //             s: "042811200893728CF01A56CCFE68F71284F54C973DFE5734EC554760B19DEDB4".to_string(),
-    //             v: 27u8,
-    //             signed_data_prefix: "6E0802115A0D00000000000022480A20".to_string(),
-    //             signed_data_suffix: "122408011220DDC9D747EC2D522D6368E7C1BB8F2DCFCA46B739E2EB60D465068E1F4816948A2A0C08C58ABE850610D58E9DDA03320962616E64636861696E".to_string(),
-    //         },
-    //         SignatureInputData {
-    //             r: "43859A093DF6E5E786FF2E1A7D42B5454512E79DDAAB674E2EAE40649B0309D6".to_string(),
-    //             s: "0D67C785A5695106B91A38974B1F7BC0AE0954F18C12A5AB184625A23E38D3AE".to_string(),
-    //             v: 27u8,
-    //             signed_data_prefix: "6D0802115A0D00000000000022480A20".to_string(),
-    //             signed_data_suffix: "122408011220DDC9D747EC2D522D6368E7C1BB8F2DCFCA46B739E2EB60D465068E1F4816948A2A0B08C68ABE850610E58EC501320962616E64636861696E".to_string(),
-    //         },
-    //     ];
-    //     let env = mock_env("sender02", &[]);
-    //     let msg = HandleMsg::AppendSignature {
-    //         block_height: 3418u64,
-    //         signatures: signature_data,
-    //     };
-    //     let _res = handle(&mut deps, env, msg).unwrap();
-    //
-    //     let signature_data = vec![
-    //         SignatureInputData {
-    //             r: "166EB606586E9D932A468F52545A66882DCBF751D974D369FCD058D5B87D2C2F".to_string(),
-    //             s: "02051DFCE46A45188E4042B007E0F6A9C265F3AAFDAA35F6EBB7586B0BB395C7".to_string(),
-    //             v: 27u8,
-    //             signed_data_prefix: "6D0802115A0D00000000000022480A20".to_string(),
-    //             signed_data_suffix: "122408011220DDC9D747EC2D522D6368E7C1BB8F2DCFCA46B739E2EB60D465068E1F4816948A2A0B08C68ABE850610CAE7FA02320962616E64636861696E".to_string(),
-    //         },
-    //         SignatureInputData {
-    //             r: "DE2B93A4D1CD495ADD00C9E8D1A9BA5FB8D00D335C58254578D730E57DEF3E01".to_string(),
-    //             s: "71A7BFBCDEECAB7E12BB8BACF50208AF78979F7BFD7F297F404E19842582E448".to_string(),
-    //             v: 27u8,
-    //             signed_data_prefix: "6D0802115A0D00000000000022480A20".to_string(),
-    //             signed_data_suffix: "122408011220DDC9D747EC2D522D6368E7C1BB8F2DCFCA46B739E2EB60D465068E1F4816948A2A0B08C68ABE850610A1DE9202320962616E64636861696E".to_string(),
-    //         },
-    //     ];
-    //     let env = mock_env("sender02", &[]);
-    //     let msg = HandleMsg::AppendSignature {
-    //         block_height: 3418u64,
-    //         signatures: signature_data,
-    //     };
-    //     let _res = handle(&mut deps, env, msg).unwrap();
-    // }
+        let msg = HandleMsg::RelayCandidateBlock {
+            data: "0000004039344645344130363046434637343443354246434531313535434631414239394233383646393137304243314330313035303630393934414542454445363543000000403831413045354438393232464138433846453934384439423444353639384645464137374535324642384446333730414532373443343332333042344436363900000040373932304435363245433037413939373932383646444344413937354639343344343144333139373442303142384443354231423337343837384231393444410000004042314141353532454646344335434544453333343033374143363235323045383941413736464134333236413443353645394139323939364330424637453236000000403733394141313638383638373239434132313339423341433541303636424445423842463036413035394332464533354539443744363535303445323646353500000040334630323634324439453730443543314334393341344637333242464539433942393541344134323635313730334238313645444346433846414441353331320000000000000d5a0000000060af854408b557570000004045354138374530324142453142353139434535433537453845333546303333463545373037443336384336444633353245414446454234314645363945334232000000403632303646324646444642423933423833424439313742303542313343413539433132333330323638363131323432463546443537333445363733303739313500000040394642394337353333434146314432313844413341463644323737463642313031433432453343334237354437383432343244413636333630344444353343320000004038413135333930364134414644464246334145413346304141344334303032413746314239464230393730323030463832384338373939444634323442303043".to_string(),
+        };
+        let env = mock_env("sender01", &[]);
+        let res = handle(&mut deps, env, msg).unwrap();
+        assert_eq!(res.messages.len(), 0);
+
+        let query_data: CandidateBlockDetail = bincode::deserialize(&candidate_block_details_read(&deps.storage).get(["sender01".as_bytes(), &3418u64.to_be_bytes()].concat().as_slice()).unwrap().as_slice()).unwrap();
+        assert_eq!(query_data, CandidateBlockDetail { block_header: vec![70, 131, 98, 21, 161, 84, 114, 223, 120, 95, 111, 140, 147, 226, 231, 76, 40, 255, 176, 55, 101, 136, 27, 111, 114, 205, 58, 21, 214, 3, 235, 249], last_signer_hex: String::from(""), sum_voting_power: 0u128, block_detail: BlockDetail { oracle_state: vec![121, 32, 213, 98, 236, 7, 169, 151, 146, 134, 253, 205, 169, 117, 249, 67, 212, 29, 49, 151, 75, 1, 184, 220, 91, 27, 55, 72, 120, 177, 148, 218], time_second: 1622115652, time_nano_second_fraction: 146102103 } } )
+    }
+
+    #[test]
+    fn append_signatures_test() {
+        let mut deps = mock_dependencies(20, &[]);
+        let env = mock_env("initiator", &[]);
+        let validators_set: Vec<ValidatorWithPower> = vec![
+            ValidatorWithPower {
+                addr: CanonicalAddr::from(decode("652D89a66Eb4eA55366c45b1f9ACfc8e2179E1c5").unwrap()),
+                power: Uint128::from(100u64),
+            },
+            ValidatorWithPower {
+                addr: CanonicalAddr::from(decode("88e1cd00710495EEB93D4f522d16bC8B87Cb00FE").unwrap()),
+                power: Uint128::from(100u64),
+            },
+            ValidatorWithPower {
+                addr: CanonicalAddr::from(decode("aAA22E077492CbaD414098EBD98AA8dc1C7AE8D9").unwrap()),
+                power: Uint128::from(100u64),
+            },
+            ValidatorWithPower {
+                addr: CanonicalAddr::from(decode("B956589b6fC5523eeD0d9eEcfF06262Ce84ff260").unwrap()),
+                power: Uint128::from(100u64),
+            },
+        ];
+        let msg = InitMsg { validators: validators_set };
+        let _res = init(&mut deps, env, msg);
+
+        let msg = HandleMsg::RelayCandidateBlock {
+            data: "0000004039344645344130363046434637343443354246434531313535434631414239394233383646393137304243314330313035303630393934414542454445363543000000403831413045354438393232464138433846453934384439423444353639384645464137374535324642384446333730414532373443343332333042344436363900000040373932304435363245433037413939373932383646444344413937354639343344343144333139373442303142384443354231423337343837384231393444410000004042314141353532454646344335434544453333343033374143363235323045383941413736464134333236413443353645394139323939364330424637453236000000403733394141313638383638373239434132313339423341433541303636424445423842463036413035394332464533354539443744363535303445323646353500000040334630323634324439453730443543314334393341344637333242464539433942393541344134323635313730334238313645444346433846414441353331320000000000000d5a0000000060af854408b557570000004045354138374530324142453142353139434535433537453845333546303333463545373037443336384336444633353245414446454234314645363945334232000000403632303646324646444642423933423833424439313742303542313343413539433132333330323638363131323432463546443537333445363733303739313500000040394642394337353333434146314432313844413341463644323737463642313031433432453343334237354437383432343244413636333630344444353343320000004038413135333930364134414644464246334145413346304141344334303032413746314239464230393730323030463832384338373939444634323442303043".to_string(),
+        };
+        let env = mock_env("sender02", &[]);
+        let _res = handle(&mut deps, env, msg).unwrap();
+
+        let env = mock_env("sender02", &[]);
+        let msg = HandleMsg::AppendSignature {
+            data: "0000000000000d5a00000002000000403942323741353939343130394443323346333135464642353842314233374531464241443244443637354635383030373339353635383141443032393434364300000040303432383131323030383933373238434630314135364343464536384637313238344635344339373344464535373334454335353437363042313944454442341b0000002036453038303231313541304430303030303030303030303032323438304132300000007e313232343038303131323230444443394437343745433244353232443633363845374331424238463244434643413436423733394532454236304434363530363845314634383136393438413241304330384335384142453835303631304435384539444441303333323039363236313645363436333638363136393645000000403433383539413039334446364535453738364646324531413744343242353435343531324537394444414142363734453245414534303634394230333039443600000040304436374337383541353639353130364239314133383937344231463742433041453039353446313843313241354142313834363235413233453338443341451b0000002036443038303231313541304430303030303030303030303032323438304132300000007c31323234303830313132323044444339443734374543324435323244363336384537433142423846324443464341343642373339453245423630443436353036384531463438313639343841324130423038433638414245383530363130453538454335303133323039363236313645363436333638363136393645".to_string(),
+        };
+        let _res = handle(&mut deps, env, msg).unwrap();
+
+        let env = mock_env("sender02", &[]);
+        let msg = HandleMsg::AppendSignature {
+            data: "0000000000000d5a00000002000000403136364542363036353836453944393332413436384635323534354136363838324443424637353144393734443336394643443035384435423837443243324600000040303230353144464345343641343531383845343034324230303745304636413943323635463341414644414133354636454242373538364230424233393543371b0000002036443038303231313541304430303030303030303030303032323438304132300000007c31323234303830313132323044444339443734374543324435323244363336384537433142423846324443464341343642373339453245423630443436353036384531463438313639343841324130423038433638414245383530363130434145374641303233323039363236313645363436333638363136393645000000404445324239334134443143443439354144443030433945384431413942413546423844303044333335433538323534353738443733304535374445463345303100000040373141374246424344454543414237453132424238424143463530323038414637383937394637424644374632393746343034453139383432353832453434381b0000002036443038303231313541304430303030303030303030303032323438304132300000007c31323234303830313132323044444339443734374543324435323244363336384537433142423846324443464341343642373339453245423630443436353036384531463438313639343841324130423038433638414245383530363130413144453932303233323039363236313645363436333638363136393645".to_string(),
+        };
+        let _res = handle(&mut deps, env, msg).unwrap();
+    }
 
     #[test]
     fn laozi_testnet_test() {
