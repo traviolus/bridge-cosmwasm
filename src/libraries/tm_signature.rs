@@ -4,8 +4,9 @@ use sha2::{Sha256, Digest as sha2Digest};
 use sha3::Keccak256;
 use cosmwasm_std::CanonicalAddr;
 use cosmwasm_crypto::secp256k1_recover_pubkey;
+use obi::{OBIDecode, OBISchema, OBIEncode};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema, OBIDecode, OBISchema, OBIEncode)]
 pub struct Data {
     pub r: Vec<u8>,
     pub s: Vec<u8>,

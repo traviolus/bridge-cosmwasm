@@ -4,7 +4,7 @@ use sha2::{Sha256, Digest};
 use std::str::FromStr;
 use hex::{encode as HexEncode, decode as HexDecode};
 use prost::encoding::{encode_key, encode_varint, WireType};
-use base64::decode as b64decode;
+use obi::OBIDecode;
 
 use crate::msg::{HandleMsg, InitMsg, QueryMsg, ValidatorWithPower, VerifyOracleDataResponse, VerifyRequestsCountResponse, GetValidatorPowerResponse};
 use crate::state::{validators_power, total_validator_power, block_details, BlockDetail, owner, block_details_read, total_validator_power_read, validators_power_read, candidate_block_details, total_validator_power_last_updated_read, CandidateBlockDetail, total_validator_power_last_updated, candidate_block_details_read, verified_results, verified_results_read};
@@ -15,7 +15,7 @@ use crate::libraries::iavl_merkle_path;
 use crate::libraries::result_codec;
 use crate::libraries::utils;
 use crate::libraries::abi::{eth_decode, eth_decode_relay_data, eth_decode_verify_data, AbiTypes};
-use crate::libraries::obi::{decode_relay_candidate_block, decode_append_signature, decode_verify_and_save_result};
+use crate::libraries::obi::{RelayCandidateBlockInput, AppendSignatureInput, VerifyAndSaveResultInput};
 
 pub fn init<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
@@ -128,7 +128,7 @@ pub fn try_relay_block<S: Storage, A: Api, Q: Querier>(
 
 fn try_verify_proof(
     root_hash: Vec<u8>,
-    version: Uint128,
+    version: u64,
     key: Vec<u8>,
     data_hash: Vec<u8>,
     merkle_paths: Vec<iavl_merkle_path::Data>
@@ -159,7 +159,7 @@ pub fn try_verify_oracle_data<S: Storage, A: Api, Q: Querier>(
     deps: &Extern<S, A, Q>,
     block_height: u64,
     result: result_codec::Result,
-    version: Uint128,
+    version: u64,
     merkle_paths: Vec<iavl_merkle_path::Data>
 ) -> StdResult<VerifyOracleDataResponse> {
     let block_details_state_read = block_details_read(&deps.storage);
@@ -209,7 +209,7 @@ pub fn try_relay_candidate_block<S: Storage, A: Api, Q: Querier>(
     env: Env,
     data: String,
 ) -> StdResult<HandleResponse> {
-    let decoded_data = decode_relay_candidate_block(data);
+    let decoded_data: RelayCandidateBlockInput = OBIDecode::try_from_slice(HexDecode(data).unwrap().as_slice()).unwrap();
     let multi_store_decoded = decoded_data.multi_store;
     let merkle_paths_decoded = decoded_data.merkle_paths;
     let block_details_state_read = block_details_read(&deps.storage);
@@ -260,7 +260,7 @@ pub fn try_append_signature<S: Storage, A: Api, Q: Querier>(
     env: Env,
     data: String,
 ) -> StdResult<HandleResponse> {
-    let decoded_data = decode_append_signature(data);
+    let decoded_data: AppendSignatureInput = OBIDecode::try_from_slice(HexDecode(data).unwrap().as_slice()).unwrap();
     let block_height = decoded_data.block_height;
     let signatures = decoded_data.signatures;
     let block_details_state_read = block_details_read(&deps.storage);
@@ -329,7 +329,7 @@ pub fn try_verify_and_save_result<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
     data: String,
 ) -> StdResult<HandleResponse> {
-    let decoded_data = decode_verify_and_save_result(data);
+    let decoded_data: VerifyAndSaveResultInput = OBIDecode::try_from_slice(HexDecode(data).unwrap().as_slice()).unwrap();
     let verify_result = match try_verify_oracle_data(deps, decoded_data.block_height, decoded_data.result, decoded_data.version, decoded_data.merkle_paths) {
         Ok(result) => result.result,
         _ => return Err(StdError::generic_err("Failed to verify oracle data")),
@@ -353,7 +353,7 @@ pub fn try_verify_requests_count<S: Storage, A: Api, Q: Querier>(
     deps: &Extern<S, A, Q>,
     block_height: u64,
     count: u64,
-    version: Uint128,
+    version: u64,
     merkle_paths: Vec<iavl_merkle_path::Data>
 ) -> StdResult<VerifyRequestsCountResponse> {
     let block_detail: BlockDetail = match block_details_read(&deps.storage).get(&block_height.to_be_bytes()) {
@@ -370,7 +370,7 @@ pub fn try_verify_requests_count<S: Storage, A: Api, Q: Querier>(
     encode_varint(count, &mut buf_int);
     let encoded_count: Vec<u8> = [buf_key, buf_int].concat();
     let mut hasher = Sha256::new();
-    hasher.update([utils::encode_varint_unsigned(Uint128::from(encoded_count.len() as u64)), encoded_count].concat());
+    hasher.update([utils::encode_varint_unsigned(encoded_count.len() as u64), encoded_count].concat());
     let data_hash = &hasher.finalize()[..];
     let verify_proof = try_verify_proof(block_detail.oracle_state, version, HexDecode("0052657175657374436f756e74").unwrap(), Vec::from(data_hash), merkle_paths);
     if !verify_proof {
@@ -608,43 +608,43 @@ mod tests {
             iavl_merkle_path::Data {
                 is_data_on_right: true,
                 sub_tree_height: 1u8,
-                sub_tree_size: Uint128::from(2u64),
-                sub_tree_version: Uint128::from(1007u64),
+                sub_tree_size: 2u64,
+                sub_tree_version: 1007u64,
                 sibling_hash: decode("EB739BB22F48B7F3053A90BA2BA4FE07FAB262CADF8664489565C50FF505B8BD").unwrap(),
             },
             iavl_merkle_path::Data {
                 is_data_on_right: true,
                 sub_tree_height: 2u8,
-                sub_tree_size: Uint128::from(4u64),
-                sub_tree_version: Uint128::from(1007u64),
+                sub_tree_size: 4u64,
+                sub_tree_version: 1007u64,
                 sibling_hash: decode("BF32F8B214E4C36170D09B5125395C4EF1ABFA26583E676EF79AA3BA20A535A4").unwrap(),
             },
             iavl_merkle_path::Data {
                 is_data_on_right: true,
                 sub_tree_height: 3u8,
-                sub_tree_size: Uint128::from(6u64),
-                sub_tree_version: Uint128::from(1007u64),
+                sub_tree_size: 6u64,
+                sub_tree_version: 1007u64,
                 sibling_hash: decode("F732D5B5007633C64B77F6CCECF01ECAB2537501D28ED623B6EC97DA4C1C6005").unwrap(),
             },
             iavl_merkle_path::Data {
                 is_data_on_right: true,
                 sub_tree_height: 4u8,
-                sub_tree_size: Uint128::from(10u64),
-                sub_tree_version: Uint128::from(1007u64),
+                sub_tree_size: 10u64,
+                sub_tree_version: 1007u64,
                 sibling_hash: decode("F054C5E2412E1519951DBD7A60E2C5EDE41BABA494A6AF6FD0B0BAC4A4695C41").unwrap(),
             },
             iavl_merkle_path::Data {
                 is_data_on_right: true,
                 sub_tree_height: 5u8,
-                sub_tree_size: Uint128::from(20u64),
-                sub_tree_version: Uint128::from(3417u64),
+                sub_tree_size: 20u64,
+                sub_tree_version: 3417u64,
                 sibling_hash: decode("FFA5A376D4DCA03596020A9A256DF9B73FE42ADEF285DD0ABE7E89A9819144EF").unwrap(),
             },
         ];
         let msg = QueryMsg::VerifyOracleData {
             block_height: 3417u64,
             result: result_data.clone(),
-            version: Uint128::from(1007u64),
+            version: 1007u64,
             merkle_paths: merkle_paths_data,
         };
 
@@ -862,7 +862,7 @@ mod tests {
         let _res = handle(&mut deps, env, msg);
 
         let msg = HandleMsg::VerifyAndSaveResult {
-            data: "00000000000c9bef0000000966726f6d5f7363616e000000000000002f0000001c414141414347356c6431397a5a57566b4141414141414150516b413d0a0a0000000000080d260a0000000060f505a50000000060f505b9010000005c41414141514e686746756e7a6d7572476b5937334b5652456a3265526f4c6e4f4c425671616b6863346633564f35704f326944534a52367a446975666171677352654e4744427a506e55724e4330346f2b7a543731506d68306b593d000000000000000000000000000c1f94000000140101000000000000000200000000000c1f9400000020bd581c9039884c76f83c5b4cb8a0498635b95b1af6f35b13b4cc0cda11ad877d0102000000000000000300000000000c1f940000002044a4cab612a8e17ba549801051248d7aa59f1756b7b62fb6a8247e9fb029c9de0103000000000000000500000000000c1f9400000020629444f42963b8ab46fb6579f5f904c4c964b7d61a5608d9e91680ad020aecc40104000000000000000900000000000c1f94000000200dafb2ae6455293750b8fbd5d10ad7ff5630cd508b064a171eb5949a855cdb5f0105000000000000001900000000000c1f9b0000002097857481b07d60ca72a80a1de9d97d4848450b4b5341b6788c6d77c5a87da8c50106000000000000003800000000000c1fa500000020e6244ecb708d37ea1c916e1ef668fefab213c85b96816626830bfbde9c71cd860107000000000000007200000000000c1fbb00000020b04db6b3ffda68cb81afb9615e6ddc4be3751b5f802d84b874432ad7e8475cfc010800000000000000df00000000000c1fde00000020302b227f6ffd0a99be5e0774b7ffbb74d4171c8b9c82434d3910cff0fec16d4f010900000000000001c700000000000c2033000000206c80fe9448cec35b4e1444347674362bf511f25a4bd9954a9d425aff4999d739000a000000000000039900000000000c22250000002053fc8ce0aeb2cf7126408f0c34f999e01bf3ea456488bf99a69f3480c6b276c6000b000000000000074300000000000c261600000020a3b4a3726c9f69d3615ccc2a358dc662c7fbe31a4e4aaffca5ef5d98b29244a7010c0000000000000e8800000000000c28d2000000207a94916148bacf4e19ae36e6055d4e1a9e6c4a4f7601ad29e83a57d8dd74d419000d0000000000001d6700000000000c38b3000000204a6ea9c54a229e4ffb6535b02b67745b07f00159c0ea23e5334545a2e4a058c0000e0000000000003acd00000000000c57eb00000020a7e219b9c4684a0f61b9306485ac90700c707912467be1815149276148a72f21010f000000000000761900000000000c6cce000000208be3c670a74e7acff15c25684456cd38ef672607f04a6ca2482631d584e2acdf0110000000000000ebec00000000000c96e7000000208ac27ed9c31dc9291bd90a4278e0e52cb3711d91336b2a1c82292b76e1fab9140011000000000001675b00000000000c9bee000000201008eccf8008f6b3f648a05e6a546d4ca1294a1dd2817502a229a411eda3f88001120000000000033dad00000000000c9bee00000020939ec419b4857e138a26f8e3003e3190f94b63e0273a4ed119d258d39afd5fcc011300000000000513a200000000000c9bee00000020ecfcca113efcdcb23c504ef173643ea0db0576d4e41ad17b5903d6cbd2f117670114000000000008beb800000000000c9bee000000208078ca2f9045bd928571ac33eefd5fd1386129a8f450c657049534ddad7e476c".to_string(),
+            data: "00000000000c9bef0000000966726f6d5f7363616e000000000000002f0000001c414141414347356c6431397a5a57566b4141414141414150516b413d0a0a0000000000080d260a0000000060f505a50000000060f505b9010000005c41414141514e686746756e7a6d7572476b5937334b5652456a3265526f4c6e4f4c425671616b6863346633564f35704f326944534a52367a446975666171677352654e4744427a506e55724e4330346f2b7a543731506d68306b593d00000000000c1f94000000140101000000000000000200000000000c1f9400000020bd581c9039884c76f83c5b4cb8a0498635b95b1af6f35b13b4cc0cda11ad877d0102000000000000000300000000000c1f940000002044a4cab612a8e17ba549801051248d7aa59f1756b7b62fb6a8247e9fb029c9de0103000000000000000500000000000c1f9400000020629444f42963b8ab46fb6579f5f904c4c964b7d61a5608d9e91680ad020aecc40104000000000000000900000000000c1f94000000200dafb2ae6455293750b8fbd5d10ad7ff5630cd508b064a171eb5949a855cdb5f0105000000000000001900000000000c1f9b0000002097857481b07d60ca72a80a1de9d97d4848450b4b5341b6788c6d77c5a87da8c50106000000000000003800000000000c1fa500000020e6244ecb708d37ea1c916e1ef668fefab213c85b96816626830bfbde9c71cd860107000000000000007200000000000c1fbb00000020b04db6b3ffda68cb81afb9615e6ddc4be3751b5f802d84b874432ad7e8475cfc010800000000000000df00000000000c1fde00000020302b227f6ffd0a99be5e0774b7ffbb74d4171c8b9c82434d3910cff0fec16d4f010900000000000001c700000000000c2033000000206c80fe9448cec35b4e1444347674362bf511f25a4bd9954a9d425aff4999d739000a000000000000039900000000000c22250000002053fc8ce0aeb2cf7126408f0c34f999e01bf3ea456488bf99a69f3480c6b276c6000b000000000000074300000000000c261600000020a3b4a3726c9f69d3615ccc2a358dc662c7fbe31a4e4aaffca5ef5d98b29244a7010c0000000000000e8800000000000c28d2000000207a94916148bacf4e19ae36e6055d4e1a9e6c4a4f7601ad29e83a57d8dd74d419000d0000000000001d6700000000000c38b3000000204a6ea9c54a229e4ffb6535b02b67745b07f00159c0ea23e5334545a2e4a058c0000e0000000000003acd00000000000c57eb00000020a7e219b9c4684a0f61b9306485ac90700c707912467be1815149276148a72f21010f000000000000761900000000000c6cce000000208be3c670a74e7acff15c25684456cd38ef672607f04a6ca2482631d584e2acdf0110000000000000ebec00000000000c96e7000000208ac27ed9c31dc9291bd90a4278e0e52cb3711d91336b2a1c82292b76e1fab9140011000000000001675b00000000000c9bee000000201008eccf8008f6b3f648a05e6a546d4ca1294a1dd2817502a229a411eda3f88001120000000000033dad00000000000c9bee00000020939ec419b4857e138a26f8e3003e3190f94b63e0273a4ed119d258d39afd5fcc011300000000000513a200000000000c9bee00000020ecfcca113efcdcb23c504ef173643ea0db0576d4e41ad17b5903d6cbd2f117670114000000000008beb800000000000c9bee000000208078ca2f9045bd928571ac33eefd5fd1386129a8f450c657049534ddad7e476c".to_string(),
         };
         let env = mock_env("oatoat", &[]);
         let _res = handle(&mut deps, env, msg);

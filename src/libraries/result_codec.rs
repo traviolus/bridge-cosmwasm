@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use schemars::JsonSchema;
 use prost::encoding::{encode_key, encode_varint, WireType};
+use obi::{OBIDecode, OBISchema, OBIEncode};
 
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, JsonSchema)]
 pub enum ResolveStatus {
@@ -31,7 +32,7 @@ impl ResolveStatus {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema, OBIDecode, OBISchema, OBIEncode)]
 pub struct Result {
     pub client_id: String,
     pub oracle_script_id: u64,

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use schemars::JsonSchema;
-use cosmwasm_std::Uint128;
+use obi::{OBIDecode, OBISchema, OBIEncode};
 
 use crate::libraries::utils;
 
@@ -30,7 +30,7 @@ use crate::libraries::utils;
 // root hash, since we only want to validate the correctness of [A], [2], and [3]. In fact, only
 // [1A], [2B], [1E], [B], and [2D] are needed in order to compute [BlockHeader].
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema, OBIDecode, OBISchema, OBIEncode)]
 pub struct Data {
     pub version_and_chain_id_hash: Vec<u8>, // [1A]
     pub height: u64, // [2]
@@ -50,7 +50,7 @@ impl Data {
                     self.version_and_chain_id_hash, // [1A]
                     utils::merkle_inner_hash( // [1B]
                         utils::merkle_leaf_hash( // [2]
-                            [&[8u8], utils::encode_varint_unsigned(Uint128::from(self.height)).as_slice()].concat()
+                            [&[8u8], utils::encode_varint_unsigned(self.height).as_slice()].concat()
                         ),
                         utils::merkle_leaf_hash( // [3]
                             utils::encode_time(

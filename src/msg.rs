@@ -1,6 +1,5 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use obi::{OBIDecode, OBISchema, OBIEncode};
 
 use cosmwasm_std::{CanonicalAddr, Uint128};
 use crate::libraries::tm_signature;
@@ -30,8 +29,8 @@ pub enum HandleMsg {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     GetValidatorPower { validator: CanonicalAddr },
-    VerifyOracleData { block_height: u64, result: Result, version: Uint128, merkle_paths: Vec<iavl_merkle_path::Data> },
-    VerifyRequestsCount { block_height: u64, count: u64, version: Uint128, merkle_paths: Vec<iavl_merkle_path::Data> },
+    VerifyOracleData { block_height: u64, result: Result, version: u64, merkle_paths: Vec<iavl_merkle_path::Data> },
+    VerifyRequestsCount { block_height: u64, count: u64, version: u64, merkle_paths: Vec<iavl_merkle_path::Data> },
     GetResult { request_id: u64 },
 }
 
@@ -52,7 +51,7 @@ pub struct RelayBlockParams {
 pub struct VerifyDataParams {
     pub block_height: u64,
     pub result: Result,
-    pub version: Uint128,
+    pub version: u64,
     pub merkle_paths: Vec<iavl_merkle_path::Data>
 }
 
@@ -60,7 +59,7 @@ pub struct VerifyDataParams {
 pub struct VerifyCountParams {
     pub block_height: u64,
     pub count: u64,
-    pub version: Uint128,
+    pub version: u64,
     pub merkle_paths: Vec<iavl_merkle_path::Data>
 }
 

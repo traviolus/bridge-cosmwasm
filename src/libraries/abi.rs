@@ -1,4 +1,4 @@
-use cosmwasm_std::{Uint128, StdResult, StdError};
+use cosmwasm_std::{StdResult, StdError};
 use ethabi::{decode as EthDecode, ParamType, Token};
 use hex::decode;
 
@@ -173,7 +173,7 @@ pub fn eth_decode_verify_data(data: &Token) -> StdResult<VerifyDataParams> {
                 },
                 _ => return Err(StdError::generic_err("Invalid verify result"))
             };
-            let decoded_version = Uint128::from(verify_version.as_u128());
+            let decoded_version = verify_version.as_u64();
             let mut decoded_merkle_paths: Vec<iavl_merkle_path::Data> = Vec::new();
             for data_tuple in verify_merkle_paths.as_slice() {
                 let data = match data_tuple {
@@ -184,8 +184,8 @@ pub fn eth_decode_verify_data(data: &Token) -> StdResult<VerifyDataParams> {
                     [Token::Bool(mer1), Token::Uint(mer2), Token::Uint(mer3), Token::Uint(mer4), Token::FixedBytes(mer5)] => iavl_merkle_path::Data {
                         is_data_on_right: mer1.clone(),
                         sub_tree_height: mer2.byte(0),
-                        sub_tree_size: Uint128::from(mer3.as_u128()),
-                        sub_tree_version: Uint128::from(mer4.as_u128()),
+                        sub_tree_size: mer3.as_u64(),
+                        sub_tree_version: mer4.as_u64(),
                         sibling_hash: mer5.to_vec(),
                     },
                     _ => return Err(StdError::generic_err("Invalid merkle paths")),
@@ -209,7 +209,7 @@ pub fn eth_decode_verify_count(data: &Token) -> StdResult<VerifyCountParams> {
         [Token::Uint(verify_block_height), Token::Uint(verify_count), Token::Uint(verify_version), Token::Array(verify_merkle_paths)] => {
             let decoded_block_height = verify_block_height.as_u64();
             let decoded_count = verify_count.as_u64();
-            let decoded_version = Uint128::from(verify_version.as_u128());
+            let decoded_version = verify_version.as_u64();
             let mut decoded_merkle_paths: Vec<iavl_merkle_path::Data> = Vec::new();
             for data_tuple in verify_merkle_paths.as_slice() {
                 let data = match data_tuple {
@@ -220,8 +220,8 @@ pub fn eth_decode_verify_count(data: &Token) -> StdResult<VerifyCountParams> {
                     [Token::Bool(mer1), Token::Uint(mer2), Token::Uint(mer3), Token::Uint(mer4), Token::FixedBytes(mer5)] => iavl_merkle_path::Data {
                         is_data_on_right: mer1.clone(),
                         sub_tree_height: mer2.byte(0),
-                        sub_tree_size: Uint128::from(mer3.as_u128()),
-                        sub_tree_version: Uint128::from(mer4.as_u128()),
+                        sub_tree_size: mer3.as_u64(),
+                        sub_tree_version: mer4.as_u64(),
                         sibling_hash: mer5.to_vec(),
                     },
                     _ => return Err(StdError::generic_err("Invalid merkle paths")),

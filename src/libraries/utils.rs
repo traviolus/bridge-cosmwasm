@@ -1,7 +1,7 @@
 use sha2::{Sha256, Digest};
 use hex::decode;
-use cosmwasm_std::Uint128;
 use core::convert::TryFrom;
+use num::ToPrimitive;
 
 pub fn merkle_leaf_hash(value: Vec<u8>) -> Vec<u8> {
     let new_value = [&[0u8], value.as_slice()].concat();
@@ -19,8 +19,8 @@ pub fn merkle_inner_hash(left: Vec<u8>, right: Vec<u8>) -> Vec<u8> {
     return result[..].to_vec();
 }
 
-pub fn encode_varint_unsigned(value: Uint128) -> Vec<u8> {
-    let mut temp_value = value.clone().u128();
+pub fn encode_varint_unsigned(value: u64) -> Vec<u8> {
+    let mut temp_value = value.clone().to_u128().unwrap();
     let mut size = 0u128;
     while temp_value > 0u128 {
         size += 1u128;
@@ -28,7 +28,7 @@ pub fn encode_varint_unsigned(value: Uint128) -> Vec<u8> {
     }
     let mut result = Vec::new();
     result.resize(size as usize, 0u8);
-    temp_value = value.clone().u128();
+    temp_value = value.clone().to_u128().unwrap();
     for idx in 0u128..size {
         result[idx as usize] = 128u8 | u8::try_from(temp_value & 127).unwrap();
         temp_value >>= 7;
@@ -38,14 +38,14 @@ pub fn encode_varint_unsigned(value: Uint128) -> Vec<u8> {
     return result;
 }
 
-pub fn encode_varint_signed(value: Uint128) -> Vec<u8> {
+pub fn encode_varint_signed(value: u64) -> Vec<u8> {
     return encode_varint_unsigned(value + value);
 }
 
 pub fn encode_time(second: u64, nano_second: u32) -> Vec<u8> {
-    let mut result = [decode("08").unwrap(), encode_varint_unsigned(Uint128::from(second))].concat();
+    let mut result = [decode("08").unwrap(), encode_varint_unsigned(second)].concat();
     if nano_second > 0u32 {
-        result = [result, decode("10").unwrap(), encode_varint_unsigned(Uint128::from(u64::from(nano_second)))].concat();
+        result = [result, decode("10").unwrap(), encode_varint_unsigned(u64::from(nano_second))].concat();
     }
     return result;
 }
@@ -71,21 +71,21 @@ mod tests {
 
     #[test]
     fn encode_varint_unsigned_test() {
-        let mut encode_result = encode_varint_unsigned(Uint128::from(116u128));
+        let mut encode_result = encode_varint_unsigned(116u64);
         assert_eq!(encode_result, decode("74").unwrap());
-        encode_result = encode_varint_unsigned(Uint128::from(14947u128));
+        encode_result = encode_varint_unsigned(14947u64);
         assert_eq!(encode_result, decode("e374").unwrap());
-        encode_result = encode_varint_unsigned(Uint128::from(244939043u128));
+        encode_result = encode_varint_unsigned(244939043u64);
         assert_eq!(encode_result, decode("a3f2e574").unwrap());
     }
 
     #[test]
     fn encode_varint_signed_test() {
-        let mut encode_result = encode_varint_signed(Uint128::from(58u128));
+        let mut encode_result = encode_varint_signed(58u64);
         assert_eq!(encode_result, decode("74").unwrap());
-        encode_result = encode_varint_signed(Uint128::from(7473u128));
+        encode_result = encode_varint_signed(7473u64);
         assert_eq!(encode_result, decode("e274").unwrap());
-        encode_result = encode_varint_signed(Uint128::from(122469521u128));
+        encode_result = encode_varint_signed(122469521u64);
         assert_eq!(encode_result, decode("a2f2e574").unwrap());
     }
 

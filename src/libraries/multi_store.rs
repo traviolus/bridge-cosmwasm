@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use schemars::JsonSchema;
 use hex::decode;
 use sha2::{Sha256, Digest};
+use obi::{OBIDecode, OBISchema, OBIEncode};
 
 use crate::libraries::utils;
 
@@ -23,7 +24,7 @@ use crate::libraries::utils;
 // root hash, since we only want to validate the correctness of [9] In fact, only
 // [8], [I5], [I9], and [I10] are needed in order to compute [AppHash].
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema, OBIDecode, OBISchema, OBIEncode)]
 pub struct Data {
     pub auth_to_ibc_transfer_stores_merkle_hash: Vec<u8>, // [I10]
     pub mint_store_merkle_hash: Vec<u8>, // [8]
