@@ -6,3 +6,4 @@ pub mod iavl_merkle_path;
 pub mod result_codec;
 pub mod secp256k1;
 pub mod abi;
+pub mod obi;

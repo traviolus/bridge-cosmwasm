@@ -112,6 +112,7 @@ checksum = "8d696c370c750c948ada61c69a0ee2cbbb9c50b1019ddb86d9317157a99c2cae"
 name = "bridge-cosm-wasm"
 version = "0.1.0"
 dependencies = [
+ "base64 0.13.0",
  "bincode",
  "cosmwasm-crypto 0.15.0",
  "cosmwasm-schema",
@@ -122,6 +123,7 @@ dependencies = [
  "getrandom 0.2.3",
  "hex",
  "num",
+ "obi",
  "prost",
  "schemars 0.7.6",
  "serde",
@@ -704,6 +706,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "obi"
+version = "0.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f7f163302f3e95c2728706fc08b355a1fa34882cacef1612b212aaf34c0d49c4"
+dependencies = [
+ "obi-derive",
+]
+
+[[package]]
+name = "obi-derive"
+version = "0.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "55ea93e903a6bf1f0e657ddaaf8e15da0af60f28bd2757a32871aca7c59df25e"
+dependencies = [
+ "obi-derive-internal",
+ "quote 0.3.15",
+ "syn",
+]
+
+[[package]]
+name = "obi-derive-internal"
+version = "0.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b00664fdffd7558a47a4c106c446104af3e789b740d7740885660c371eb0d09d"
+dependencies = [
+ "proc-macro2",
+ "quote 1.0.9",
+ "syn",
+]
+
+[[package]]
 name = "object"
 version = "0.25.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -786,9 +819,15 @@ dependencies = [
  "anyhow",
  "itertools",
  "proc-macro2",
- "quote",
+ "quote 1.0.9",
  "syn",
 ]
+
+[[package]]
+name = "quote"
+version = "0.3.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a6e920b65c65f10b2ae65c831a81a073a89edd28c7cce89475bff467ab4167a"
 
 [[package]]
 name = "quote"
@@ -903,7 +942,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "11af7a475c9ee266cfaa9e303a47c830ebe072bf3101ab907a7b7b9d816fa01d"
 dependencies = [
  "proc-macro2",
- "quote",
+ "quote 1.0.9",
  "serde_derive_internals",
  "syn",
 ]
@@ -915,7 +954,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "902fdfbcf871ae8f653bddf4b2c05905ddaabc08f69d32a915787e3be0d31356"
 dependencies = [
  "proc-macro2",
- "quote",
+ "quote 1.0.9",
  "serde_derive_internals",
  "syn",
 ]
@@ -954,7 +993,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "963a7dbc9895aeac7ac90e74f34a5d5261828f79df35cbed41e10189d3804d43"
 dependencies = [
  "proc-macro2",
- "quote",
+ "quote 1.0.9",
  "syn",
 ]
 
@@ -965,7 +1004,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1dbab34ca63057a1f15280bdf3c39f2b1eb1b54c17e98360e511637aef7418c6"
 dependencies = [
  "proc-macro2",
- "quote",
+ "quote 1.0.9",
  "syn",
 ]
 
@@ -1033,7 +1072,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1508efa03c362e23817f96cde18abed596a25219a8b2c66e8db33c03543d315b"
 dependencies = [
  "proc-macro2",
- "quote",
+ "quote 1.0.9",
  "syn",
 ]
 
@@ -1056,7 +1095,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f71489ff30030d2ae598524f61326b902466f72a0fb1a8564c001cc63425bcc7"
 dependencies = [
  "proc-macro2",
- "quote",
+ "quote 1.0.9",
  "unicode-xid",
 ]
 
@@ -1076,7 +1115,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "060d69a0afe7796bf42e9e2ff91f5ee691fb15c53d38b4b62a9a53eb23164745"
 dependencies = [
  "proc-macro2",
- "quote",
+ "quote 1.0.9",
  "syn",
 ]
 
@@ -1172,7 +1211,7 @@ dependencies = [
  "lazy_static",
  "log",
  "proc-macro2",
- "quote",
+ "quote 1.0.9",
  "syn",
  "wasm-bindgen-shared",
 ]
@@ -1183,7 +1222,7 @@ version = "0.2.74"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "088169ca61430fe1e58b8096c24975251700e7b1f6fd91cc9d59b04fb9b18bd4"
 dependencies = [
- "quote",
+ "quote 1.0.9",
  "wasm-bindgen-macro-support",
 ]
 
@@ -1194,7 +1233,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be2241542ff3d9f241f5e2cb6dd09b37efe786df8851c54957683a49f0987a97"
 dependencies = [
  "proc-macro2",
- "quote",
+ "quote 1.0.9",
  "syn",
  "wasm-bindgen-backend",
  "wasm-bindgen-shared",
